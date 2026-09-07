@@ -46,9 +46,9 @@ function createPrismaClient(): PrismaClient {
     new pg.Pool({
       connectionString,
       ssl: { rejectUnauthorized: false },
-      max: 3,
-      idleTimeoutMillis: 5000,
-      connectionTimeoutMillis: 5000,
+      max: 5,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
       statement_timeout: 10000,
       query_timeout: 10000,
     });
@@ -58,9 +58,7 @@ function createPrismaClient(): PrismaClient {
     console.error("Non-fatal pg.Pool idle connection event (recovered):", err?.message || err);
   });
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.pgPool = pool;
-  }
+  globalForPrisma.pgPool = pool;
 
   const adapter = new PrismaPg(pool);
 
@@ -75,11 +73,10 @@ function createPrismaClient(): PrismaClient {
 
 /**
  * Singleton Prisma Client instance.
+ * Reuses instance on globalThis across warm serverless container invocations.
  */
 export const db: PrismaClient =
   globalForPrisma.prisma ?? createPrismaClient();
 
-// Attach the instance to globalThis in development to survive hot-reloads.
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = db;
-}
+globalForPrisma.prisma = db;
+

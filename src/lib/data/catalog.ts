@@ -7,6 +7,8 @@
 
 import { db } from "@/lib/db";
 import type { ProductUnit } from "@/lib/types";
+import { unstable_cache } from "next/cache";
+import { cache } from "react";
 
 // =============================================================================
 // TYPES
@@ -295,37 +297,40 @@ export async function fetchListingDetail(
 
 /**
  * Fetches all categories with their active listing counts, images, and descriptions.
+ * Cached with Next.js unstable_cache (60s TTL / 'categories' tag) for instant sub-millisecond responses.
  */
-export async function fetchCategoriesWithCounts(): Promise<
-  CategoryWithCount[]
-> {
-  const categories = await db.category.findMany({
-    include: {
-      products: {
-        include: {
-          listings: {
-            where: { active: true },
-            select: { id: true },
+export const fetchCategoriesWithCounts = unstable_cache(
+  async (): Promise<CategoryWithCount[]> => {
+    const categories = await db.category.findMany({
+      include: {
+        products: {
+          include: {
+            listings: {
+              where: { active: true },
+              select: { id: true },
+            },
           },
         },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
 
-  return categories.map((cat) => ({
-    id: cat.id,
-    name: cat.name,
-    slug: cat.slug,
-    iconName: cat.iconName,
-    imageUrl: cat.imageUrl || null,
-    description: cat.description || null,
-    listingCount: cat.products.reduce(
-      (total, product) => total + product.listings.length,
-      0
-    ),
-  }));
-}
+    return categories.map((cat) => ({
+      id: cat.id,
+      name: cat.name,
+      slug: cat.slug,
+      iconName: cat.iconName,
+      imageUrl: cat.imageUrl || null,
+      description: cat.description || null,
+      listingCount: cat.products.reduce(
+        (total, product) => total + product.listings.length,
+        0
+      ),
+    }));
+  },
+  ["categories-with-counts-v1"],
+  { revalidate: 60, tags: ["categories"] }
+);
 
 /**
  * Fetches a single category with its brand options and listings count.

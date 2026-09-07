@@ -9,6 +9,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 
 /**
  * Creates a Supabase client for use in Server Components, Server Actions,
@@ -47,11 +48,11 @@ export async function createSupabaseServerClient() {
  * Gets the currently authenticated user from the Supabase session.
  * Returns null if not authenticated.
  *
- * Always use `getUser()` (not `getSession()`) for server-side auth checks
- * as per Supabase security recommendations — `getUser()` validates the
- * JWT with Supabase Auth server, while `getSession()` only decodes locally.
+ * Memoized via React cache() so multiple components in the same request
+ * tree (e.g. layout.tsx and page.tsx) share the same auth lookup without
+ * duplicate HTTP round-trips to Supabase.
  */
-export async function getAuthenticatedUser() {
+export const getAuthenticatedUser = cache(async () => {
   const supabase = await createSupabaseServerClient();
   const {
     data: { user },
@@ -63,4 +64,4 @@ export async function getAuthenticatedUser() {
   }
 
   return user;
-}
+});
