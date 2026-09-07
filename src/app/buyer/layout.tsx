@@ -32,7 +32,7 @@ export default async function BuyerLayout({
 
   return (
     <CartProvider>
-      <div className="flex min-h-screen flex-col md:flex-row">
+      <div className="flex min-h-screen flex-col md:flex-row w-full max-w-full overflow-x-hidden">
         {/* --- Desktop Sidebar (hidden on mobile) --- */}
         <aside className="hidden w-64 shrink-0 flex-col border-r border-border bg-card md:flex">
           {/* Logo */}
@@ -54,18 +54,15 @@ export default async function BuyerLayout({
 
           <Separator />
 
-          {/* Navigation */}
+          {/* Navigation Links */}
           <BuyerSidebarNav />
-
-          <div className="px-4 pb-4">
-            <CartTriggerButton />
-          </div>
 
           <Separator />
 
-          {/* User Info + Logout */}
-          <div className="p-4">
-            <div className="mb-3 truncate text-xs text-muted-foreground">
+          {/* User Profile & Sign Out */}
+          <div className="p-4 space-y-2">
+            <CartTriggerButton />
+            <div className="truncate text-xs text-muted-foreground pt-2">
               <span className="block font-medium text-foreground">{userName}</span>
               <span className="block truncate">{user.email}</span>
             </div>
@@ -84,18 +81,18 @@ export default async function BuyerLayout({
         </aside>
 
         {/* --- Mobile Top Bar (hidden on desktop) --- */}
-        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-4 md:hidden">
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+        <header className="flex h-14 items-center justify-between border-b border-border bg-card px-3 sm:px-4 md:hidden w-full max-w-full overflow-x-hidden">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary">
               <HardHat className="h-3.5 w-3.5 text-primary-foreground" />
             </div>
-            <span className="text-sm font-bold tracking-tight">ConMart</span>
+            <span className="text-sm font-bold tracking-tight truncate">ConMart</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <LanguageToggle />
             <ThemeToggle />
             <CartTriggerButton />
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
               <User className="h-3.5 w-3.5" />
               <span className="max-w-[70px] truncate">{userName}</span>
             </div>
@@ -103,8 +100,8 @@ export default async function BuyerLayout({
         </header>
 
         {/* --- Main Content --- */}
-        <main className="flex-1 overflow-auto bg-background pb-16 md:pb-0">
-          <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">{children}</div>
+        <main className="flex-1 overflow-x-hidden bg-background pb-16 md:pb-0">
+          <div className="mx-auto max-w-6xl px-3 py-4 sm:px-6 sm:py-8 w-full max-w-full overflow-x-hidden">{children}</div>
         </main>
 
         {/* --- Mobile Bottom Navigation (hidden on desktop) --- */}

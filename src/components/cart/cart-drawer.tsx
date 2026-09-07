@@ -316,12 +316,14 @@ export function CartTriggerButton() {
   return (
     <button
       onClick={() => setIsOpen(true)}
-      className="relative flex items-center gap-2 rounded-lg border border-border/80 bg-card px-3 py-2 text-xs font-semibold text-foreground transition-all hover:border-primary/50 hover:bg-muted shadow-xs"
+      className="relative flex items-center gap-1.5 sm:gap-2 rounded-lg border border-border/80 bg-card p-2 sm:px-3 sm:py-2 text-xs font-semibold text-foreground transition-all hover:border-primary/50 hover:bg-muted shadow-xs shrink-0"
+      aria-label={t("cart_trigger_btn")}
+      title={t("cart_trigger_btn")}
     >
       <ShoppingBag className="h-4 w-4 text-primary" />
-      <span>{t("cart_trigger_btn")}</span>
+      <span className="hidden sm:inline">{t("cart_trigger_btn")}</span>
       {totalItemCount > 0 && (
-        <Badge className="h-5 min-w-5 px-1.5 rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+        <Badge className="h-4 min-w-4 px-1 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
           {totalItemCount}
         </Badge>
       )}

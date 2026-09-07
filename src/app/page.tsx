@@ -55,18 +55,18 @@ export default function HomePage() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <LanguageToggle />
             <ThemeToggle />
             <Link
               href="/login"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs")}
+              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs hidden sm:inline-flex")}
             >
               {t("nav_sign_in")}
             </Link>
             <Link
               href="/register"
-              className={cn(buttonVariants({ size: "sm" }), "text-xs font-bold")}
+              className={cn(buttonVariants({ size: "sm" }), "text-xs font-bold shadow-xs")}
             >
               {t("nav_get_started")}
               <ArrowRight className="ml-1 h-3.5 w-3.5" />
