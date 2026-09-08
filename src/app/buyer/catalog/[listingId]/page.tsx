@@ -7,6 +7,7 @@
 
 import { notFound } from "next/navigation";
 import { fetchListingDetail, fetchDepotListings } from "@/lib/data/catalog";
+import { getPlatformFeePercent, getVatRatePercent } from "@/lib/config/env";
 import { ListingDetailView } from "./listing-detail-view";
 
 interface ListingDetailPageProps {
@@ -32,6 +33,11 @@ export default async function ListingDetailPage({
       listing={listing}
       depotListings={depotListings}
       adminPhone={adminPhone}
+      // Passed down so the buyer's live calculator uses the same rates the
+      // server will apply. Fee and VAT are server-only configuration and are
+      // undefined if a client component reads process.env directly.
+      platformFeePercent={getPlatformFeePercent()}
+      vatRatePercent={getVatRatePercent()}
     />
   );
 }

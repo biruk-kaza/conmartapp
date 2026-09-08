@@ -13,7 +13,6 @@ import Link from "next/link";
 import {
   HardHat,
   ArrowRight,
-  ShieldCheck,
   Building2,
   Truck,
   RotateCcw,
@@ -30,7 +29,6 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";

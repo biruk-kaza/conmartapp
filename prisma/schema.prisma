@@ -187,10 +187,14 @@ enum DisputeStatus {
 // MODELS
 // =============================================================================
 
-/// Platform user. Linked 1:1 with Supabase Auth via `auth_id`.
+/// Platform user.
+///
+/// `authId` links to a Supabase Auth account and is null for contractors a
+/// field agent captured offline: they have a profile and can receive enquiries
+/// but cannot sign in until they register themselves.
 model User {
   id          String   @id @default(cuid())
-  authId      String   @unique @map("auth_id")
+  authId      String?  @unique @map("auth_id")
   role        UserRole
   name        String
   phone       String

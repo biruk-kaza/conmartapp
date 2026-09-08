@@ -2,10 +2,9 @@
 // ConMart — Seller Layout (Responsive & Localized)
 // =============================================================================
 
-import { redirect } from "next/navigation";
 import { HardHat, User } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
 import {
@@ -19,13 +18,8 @@ export default async function SellerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthenticatedUser();
-
-  if (!user) {
-    redirect("/login?redirect=/seller/dashboard");
-  }
-
-  const userName = (user.user_metadata?.name as string) ?? "Seller";
+  const user = await requireRole(["SELLER", "ADMIN"], "/seller/dashboard");
+  const userName = user.name;
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row w-full max-w-full overflow-x-hidden">

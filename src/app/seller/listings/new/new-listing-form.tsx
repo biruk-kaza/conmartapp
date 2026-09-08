@@ -31,7 +31,6 @@ import { Badge } from "@/components/ui/badge";
 import { ImageUploader } from "@/components/image-uploader";
 import { createSellerListing, type CreatePriceTierInput } from "@/app/actions/listings";
 import { ProductUnit } from "@prisma/client";
-import { PRODUCT_UNIT_LABELS, formatETB } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
@@ -176,7 +175,6 @@ export function NewListingForm({
     }
   };
 
-  const unitLabel = PRODUCT_UNIT_LABELS[unit] ?? unit;
   const lowestPrice = priceTiers.reduce(
     (min, t) => (t.unitPrice < min ? t.unitPrice : min),
     priceTiers[0]?.unitPrice || 0

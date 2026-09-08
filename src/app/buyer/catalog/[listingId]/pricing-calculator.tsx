@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 
-import { calculateProformaPreview } from "@/lib/engine/proforma-preview";
+import { calculateProformaBreakdown } from "@/lib/engine/pricing";
 import { generateProformaAction } from "@/app/actions/orders";
 import { formatETB } from "@/lib/types";
 import { useLanguage } from "@/lib/i18n/language-context";
@@ -39,6 +39,9 @@ interface PricingCalculatorProps {
   productTitle: string;
   unitLabel: string;
   tiers: PriceTier[];
+  /** Supplied by the server so the preview matches the committed invoice. */
+  platformFeePercent: number;
+  vatRatePercent: number;
 }
 
 export function PricingCalculator({
@@ -49,6 +52,8 @@ export function PricingCalculator({
   productTitle,
   unitLabel,
   tiers,
+  platformFeePercent,
+  vatRatePercent,
 }: PricingCalculatorProps) {
   const { t, locale } = useLanguage();
   const localizedUnit = getLocalizedUnit(unitLabel, locale);
@@ -74,8 +79,13 @@ export function PricingCalculator({
   // Calculate preview breakdown
   const preview = useMemo(() => {
     if (!matchedTier || !isValidQty) return null;
-    return calculateProformaPreview(numericQty, matchedTier.unitPrice);
-  }, [numericQty, matchedTier, isValidQty]);
+    return calculateProformaBreakdown(
+      numericQty,
+      matchedTier.unitPrice,
+      platformFeePercent,
+      vatRatePercent
+    );
+  }, [numericQty, matchedTier, isValidQty, platformFeePercent, vatRatePercent]);
 
   // Find which tier the quantity falls closest to (for guidance messaging)
   const tierGuidance = useMemo(() => {

@@ -29,15 +29,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ImageUploader } from "@/components/image-uploader";
 import { updateSellerListing, type CreatePriceTierInput } from "@/app/actions/listings";
-import { PRODUCT_UNIT_LABELS, type ProductUnit, formatETB } from "@/lib/types";
+import type { ProductUnit } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
-import {
-  getCategoryTitle,
-  getLocalizedUnit,
-  getLocalizedLocation,
-  formatPrice,
-} from "@/lib/i18n/translations";
+import { getCategoryTitle, getLocalizedUnit } from "@/lib/i18n/translations";
 
 interface ExistingTier {
   id: string;
@@ -91,8 +86,6 @@ export function EditListingForm({
         }))
       : [{ minQty: 10, maxQty: 100, unitPrice: 500, validDays: 180 }]
   );
-
-  const unitLabel = PRODUCT_UNIT_LABELS[unit] ?? unit;
 
   const handleAddTier = () => {
     const lastTier = priceTiers[priceTiers.length - 1];

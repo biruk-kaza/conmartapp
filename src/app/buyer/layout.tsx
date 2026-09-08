@@ -4,12 +4,11 @@
 // Responsive layout: Desktop sidebar + Mobile bottom navigation bar.
 // =============================================================================
 
-import { redirect } from "next/navigation";
 import { HardHat, LogOut, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/session";
 import { signOut } from "@/app/actions/auth";
 import { CartProvider } from "@/lib/cart/cart-context";
 import { CartDrawer, CartTriggerButton } from "@/components/cart/cart-drawer";
@@ -22,13 +21,9 @@ export default async function BuyerLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthenticatedUser();
-
-  if (!user) {
-    redirect("/login?redirect=/buyer/catalog");
-  }
-
-  const userName = (user.user_metadata?.name as string) ?? "Buyer";
+  // Field agents browse the catalog to raise enquiries for walk-in contractors.
+  const user = await requireRole(["BUYER", "FIELD_AGENT", "ADMIN"], "/buyer/catalog");
+  const userName = user.name;
 
   return (
     <CartProvider>

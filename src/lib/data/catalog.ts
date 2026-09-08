@@ -7,8 +7,20 @@
 
 import { db } from "@/lib/db";
 import type { ProductUnit } from "@/lib/types";
+import { coarsenLocation, getMaskedSellerLabel } from "@/lib/security/masking";
 import { unstable_cache } from "next/cache";
-import { cache } from "react";
+
+/**
+ * Buyer-facing pseudonym for a supplier. Every catalog surface uses this so a
+ * legal business name is never rendered before the introduction is paid for.
+ */
+function maskedSupplier(sellerId: string) {
+  return {
+    id: sellerId,
+    name: "ConMart Verified Supplier",
+    companyName: getMaskedSellerLabel(sellerId),
+  };
+}
 
 // =============================================================================
 // TYPES
@@ -142,10 +154,12 @@ export async function fetchCatalogListings(
 
   if (searchQuery && searchQuery.trim()) {
     const q = searchQuery.trim();
+    // Supplier company name is deliberately not searchable: matching on it
+    // would let a buyer confirm a masked depot's legal name character by
+    // character without ever paying an unlock fee.
     whereClause.OR = [
       { product: { title: { contains: q, mode: "insensitive" } } },
       { location: { contains: q, mode: "insensitive" } },
-      { seller: { companyName: { contains: q, mode: "insensitive" } } },
     ];
   }
 
@@ -183,7 +197,7 @@ export async function fetchCatalogListings(
 
   let mapped: CatalogListing[] = listings.map((listing) => ({
     id: listing.id,
-    location: listing.location,
+    location: coarsenLocation(listing.location),
     active: listing.active,
     imageUrl: listing.imageUrl || listing.product.imageUrl || null,
     product: {
@@ -194,11 +208,7 @@ export async function fetchCatalogListings(
       specs: (listing.product.specs as Record<string, string>) || {},
       category: listing.product.category,
     },
-    seller: {
-      id: listing.seller.id,
-      name: "ConMart Verified Supplier",
-      companyName: `ConMart Partner Depot (#DEPOT-${listing.seller.id.slice(-4).toUpperCase()})`,
-    },
+    seller: maskedSupplier(listing.seller.id),
     lowestPrice:
       listing.priceTiers.length > 0
         ? Number(listing.priceTiers[0].unitPrice)
@@ -268,7 +278,7 @@ export async function fetchListingDetail(
 
   return {
     id: listing.id,
-    location: listing.location,
+    location: coarsenLocation(listing.location),
     active: listing.active,
     imageUrl: listing.imageUrl || listing.product.imageUrl || null,
     product: {
@@ -279,11 +289,7 @@ export async function fetchListingDetail(
       specs: (listing.product.specs as Record<string, string>) || {},
       category: listing.product.category,
     },
-    seller: {
-      id: listing.seller.id,
-      name: "ConMart Desk Verified",
-      companyName: `ConMart Partner Depot (#DEPOT-${listing.seller.id.slice(-4).toUpperCase()})`,
-    },
+    seller: maskedSupplier(listing.seller.id),
     priceTiers: listing.priceTiers.map((tier) => ({
       id: tier.id,
       minQty: tier.minQty,
@@ -638,7 +644,7 @@ export async function fetchDepotListings(
 
   return listings.map((listing) => ({
     id: listing.id,
-    location: listing.location,
+    location: coarsenLocation(listing.location),
     active: listing.active,
     imageUrl: listing.imageUrl || listing.product.imageUrl || null,
     product: {
@@ -649,11 +655,7 @@ export async function fetchDepotListings(
       specs: (listing.product.specs as Record<string, string>) || {},
       category: listing.product.category,
     },
-    seller: {
-      id: listing.seller.id,
-      name: "ConMart Verified Supplier",
-      companyName: `ConMart Partner Depot (#DEPOT-${listing.seller.id.slice(-4).toUpperCase()})`,
-    },
+    seller: maskedSupplier(listing.seller.id),
     lowestPrice:
       listing.priceTiers.length > 0
         ? Number(listing.priceTiers[0].unitPrice)
@@ -765,11 +767,13 @@ export async function fetchProductWithCompetingOffers(
     return {
       listingId: listing.id,
       sellerId: listing.seller.id,
-      depotName: `ConMart Partner Depot (#DEPOT-${listing.seller.id.slice(-4).toUpperCase()})`,
-      location: listing.location,
-      sellerType: profile?.sellerType || "WHOLESALER",
-      verificationStatus: profile?.verificationStatus || "VERIFIED",
-      vatRegistered: profile?.vatRegistered ?? true,
+      depotName: getMaskedSellerLabel(listing.seller.id),
+      location: coarsenLocation(listing.location),
+      sellerType: profile?.sellerType || "RETAILER",
+      // A supplier with no profile row has not been reviewed. Defaulting these
+      // to VERIFIED / VAT-registered would show a trust badge nobody earned.
+      verificationStatus: profile?.verificationStatus || "UNVERIFIED",
+      vatRegistered: profile?.vatRegistered ?? false,
       lowestPrice,
       moq,
       tiers: listing.priceTiers.map((t) => ({

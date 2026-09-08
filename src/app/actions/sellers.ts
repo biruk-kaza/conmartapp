@@ -10,22 +10,14 @@
 // =============================================================================
 
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { SellerVerificationStatus, SellerType } from "@prisma/client";
 
 export async function getAdminSellersAction() {
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { success: false, error: "Unauthorized" };
-  }
-
-  const admin = await db.user.findUnique({
-    where: { authId: authUser.id },
-  });
-
-  if (!admin || admin.role !== "ADMIN") {
-    return { success: false, error: "Only platform administrators can access seller compliance." };
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
   }
 
   const sellers = await db.user.findMany({
@@ -85,17 +77,9 @@ export async function updateSellerVerificationAction({
   status: SellerVerificationStatus;
   sellerType?: SellerType;
 }) {
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { success: false, error: "Unauthorized" };
-  }
-
-  const admin = await db.user.findUnique({
-    where: { authId: authUser.id },
-  });
-
-  if (!admin || admin.role !== "ADMIN") {
-    return { success: false, error: "Only platform administrators can change verification status." };
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
   }
 
   await db.sellerProfile.update({

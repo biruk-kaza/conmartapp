@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # The build imports src/lib/config/env.ts, which validates the real
+      # environment. These placeholders satisfy the schema without granting
+      # access to anything; no job here connects to a database.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      PLATFORM_FEE_PERCENT: "0"
+      VAT_RATE_PERCENT: "15"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # `npm ci` runs postinstall, which generates the client. Repeated here so
+      # a change to schema.prisma that breaks generation fails with a clear step.
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Production build
+        run: npm run build
+
+      - name: Check for committed secrets
+        run: |
+          # The database password was committed once already. This catches a
+          # literal Postgres URL with inline credentials before it lands again.
+          if git grep -nIE 'postgres(ql)?://[^:]+:[^@[:space:]]+@' -- \
+               ':!*.example' ':!SECURITY.md' ':!.github/workflows/ci.yml'; then
+            echo "::error::A connection string with inline credentials is committed. Move it to .env.local."
+            exit 1
+          fi

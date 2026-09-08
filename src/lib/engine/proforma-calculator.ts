@@ -17,12 +17,12 @@
 import "server-only";
 
 import { db } from "@/lib/db";
-import {
-  getPlatformFeePercent,
-  getVatRatePercent,
-  type ProformaCalculationInput,
-  type ProformaCalculationResult,
-  type ProformaCalculationError,
+import { getPlatformFeePercent, getVatRatePercent } from "@/lib/config/env";
+import { calculateProformaBreakdown } from "@/lib/engine/pricing";
+import type {
+  ProformaCalculationInput,
+  ProformaCalculationResult,
+  ProformaCalculationError,
 } from "@/lib/types";
 
 /**
@@ -143,24 +143,15 @@ export async function calculateProforma(
   //    Prisma Decimal is converted to Number for arithmetic.
   // ---------------------------------------------------------------------------
   const unitPrice = Number(matchingTier.unitPrice);
-  const platformFeePercent = getPlatformFeePercent();
-  const vatRatePercent = getVatRatePercent();
 
-  // Base Subtotal: qty × unit_price
-  const baseSubtotal = roundToTwoDecimals(requestedQty * unitPrice);
-
-  // Platform Fee: base × (fee% / 100)
-  const platformFee = roundToTwoDecimals(
-    baseSubtotal * (platformFeePercent / 100)
+  // The same function backs the buyer's live calculator, so the preview and
+  // the committed invoice cannot drift apart.
+  const breakdown = calculateProformaBreakdown(
+    requestedQty,
+    unitPrice,
+    getPlatformFeePercent(),
+    getVatRatePercent()
   );
-
-  // Tax (VAT): (base + fee) × (vat% / 100)
-  const tax = roundToTwoDecimals(
-    (baseSubtotal + platformFee) * (vatRatePercent / 100)
-  );
-
-  // Grand Total: base + fee + tax (guaranteed exact reconciliation)
-  const grandTotal = Number((baseSubtotal + platformFee + tax).toFixed(2));
 
   // ---------------------------------------------------------------------------
   // 6. Return the complete calculation result
@@ -171,61 +162,9 @@ export async function calculateProforma(
       tierId: matchingTier.id,
       unitPrice,
       qty: requestedQty,
-      baseSubtotal,
-      platformFee,
-      tax,
-      grandTotal,
+      ...breakdown,
       listingId: listing.id,
       sellerId: listing.sellerId,
     },
   };
-}
-
-/**
- * Rounds a financial number to exactly 2 decimal places.
- * Formats to fixed precision before rounding to prevent IEEE 754 binary floating drift.
- *
- * @param value - The number to round
- * @returns The value rounded to 2 decimal places
- */
-function roundToTwoDecimals(value: number): number {
-  return Math.round(Number(value.toFixed(6)) * 100) / 100;
-}
-
-/**
- * Client-side preview calculation (for the live pricing calculator UI).
- *
- * This is a pure function with NO database access — it takes the unit price
- * directly and calculates the breakdown. Used for instant UI feedback.
- *
- * The result is ALWAYS re-validated on the server via calculateProforma()
- * before an order is committed.
- *
- * @param qty - Requested quantity
- * @param unitPrice - Per-unit price from the selected tier
- * @param platformFeePercent - Platform fee percentage (default 0 under contact-unlock model)
- * @param vatRatePercent - VAT rate percentage (default 15)
- * @returns Preview breakdown object
- */
-export function calculateProformaPreview(
-  qty: number,
-  unitPrice: number,
-  platformFeePercent: number = 0,
-  vatRatePercent: number = 15
-): {
-  baseSubtotal: number;
-  platformFee: number;
-  tax: number;
-  grandTotal: number;
-} {
-  const baseSubtotal = roundToTwoDecimals(qty * unitPrice);
-  const platformFee = roundToTwoDecimals(
-    baseSubtotal * (platformFeePercent / 100)
-  );
-  const tax = roundToTwoDecimals(
-    (baseSubtotal + platformFee) * (vatRatePercent / 100)
-  );
-  const grandTotal = roundToTwoDecimals(baseSubtotal + platformFee + tax);
-
-  return { baseSubtotal, platformFee, tax, grandTotal };
 }

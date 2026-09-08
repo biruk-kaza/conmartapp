@@ -12,9 +12,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Loader2, AlertCircle, Building2, ShoppingCart, ShieldCheck } from "lucide-react";
+import { UserPlus, Loader2, AlertCircle, Building2, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ export function RegisterForm() {
     register,
     handleSubmit,
     setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -57,7 +57,10 @@ export function RegisterForm() {
     },
   });
 
-  const selectedRole = watch("role");
+  // `useWatch` rather than `watch("role")`: the latter hands back a function
+  // the React Compiler cannot memoize, so it bails out of optimizing this
+  // component entirely.
+  const selectedRole = useWatch({ control, name: "role" });
 
   function onSubmit(data: RegisterFormData) {
     setServerError(null);
@@ -106,10 +109,11 @@ export function RegisterForm() {
           {/* --- Role Selection --- */}
           <div className="space-y-2">
             <Label>{t("auth_role_label")}</Label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setValue("role", "BUYER")}
+                aria-pressed={selectedRole === "BUYER"}
                 className={`flex flex-col items-center gap-1.5 rounded-md border-2 p-2.5 text-center text-xs font-semibold transition-all ${
                   selectedRole === "BUYER"
                     ? "border-primary bg-primary/10 text-primary"
@@ -122,6 +126,7 @@ export function RegisterForm() {
               <button
                 type="button"
                 onClick={() => setValue("role", "SELLER")}
+                aria-pressed={selectedRole === "SELLER"}
                 className={`flex flex-col items-center gap-1.5 rounded-md border-2 p-2.5 text-center text-xs font-semibold transition-all ${
                   selectedRole === "SELLER"
                     ? "border-primary bg-primary/10 text-primary"
@@ -130,18 +135,6 @@ export function RegisterForm() {
               >
                 <Building2 className="h-5 w-5" />
                 <span className="line-clamp-2">{t("auth_role_seller")}</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setValue("role", "ADMIN")}
-                className={`flex flex-col items-center gap-1.5 rounded-md border-2 p-2.5 text-center text-xs font-semibold transition-all ${
-                  selectedRole === "ADMIN"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background text-muted-foreground hover:border-muted-foreground/50"
-                }`}
-              >
-                <ShieldCheck className="h-5 w-5" />
-                <span className="line-clamp-2">{t("auth_role_admin")}</span>
               </button>
             </div>
             {/* Hidden input for form registration */}

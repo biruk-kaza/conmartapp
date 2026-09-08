@@ -16,16 +16,17 @@
 
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { authorize, getSessionUser } from "@/lib/auth/session";
 import {
   generateReferenceCode,
   normalizeReferenceCode,
 } from "@/lib/engine/reference-code";
 import { generateProformaSchema, updateOrderStatusSchema } from "@/lib/validations";
+import { getPlatformFeePercent, getVatRatePercent } from "@/lib/config/env";
+import { applyFeesAndVat, calculateProformaBreakdown } from "@/lib/engine/pricing";
+import { roundCurrency } from "@/lib/money";
 import {
   ORDER_STATUS_TRANSITIONS,
-  getPlatformFeePercent,
-  getVatRatePercent,
   type ActionResult,
   type OrderStatus,
 } from "@/lib/types";
@@ -54,24 +55,11 @@ export async function generateProformaAction(
   // ---------------------------------------------------------------------------
   // 1. Authenticate
   // ---------------------------------------------------------------------------
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { success: false, error: "You must be signed in to generate a proforma." };
+  const auth = await authorize(["BUYER", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
   }
-
-  // Look up the user in our database to get their role and ID
-  const dbUser = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
-  if (!dbUser) {
-    return { success: false, error: "User profile not found. Please complete registration." };
-  }
-
-  if (dbUser.role !== "BUYER" && dbUser.role !== "ADMIN") {
-    return { success: false, error: "Only buyers can generate proforma invoices." };
-  }
+  const dbUser = auth.user;
 
   // ---------------------------------------------------------------------------
   // 2. Validate input
@@ -121,19 +109,16 @@ export async function generateProformaAction(
         );
       }
 
-      // Re-run precise calculations
+      // Recalculated server-side from the tier price in the database. The
+      // quantity is the only figure the client gets to influence.
       const unitPrice = Number(matchingTier.unitPrice);
-      const feePercent = getPlatformFeePercent();
-      const vatPercent = getVatRatePercent();
-      const baseSubtotal =
-        Math.round(Number((parsed.data.qty * unitPrice).toFixed(6)) * 100) / 100;
-      const platformFee =
-        Math.round(Number((baseSubtotal * (feePercent / 100)).toFixed(6)) * 100) / 100;
-      const tax =
-        Math.round(
-          Number(((baseSubtotal + platformFee) * (vatPercent / 100)).toFixed(6)) * 100
-        ) / 100;
-      const grandTotal = Number((baseSubtotal + platformFee + tax).toFixed(2));
+      const { baseSubtotal, platformFee, tax, grandTotal } =
+        calculateProformaBreakdown(
+          parsed.data.qty,
+          unitPrice,
+          getPlatformFeePercent(),
+          getVatRatePercent()
+        );
 
       // Attempt order persistence with atomic retry on unique constraint collision
       let attempts = 0;
@@ -214,23 +199,11 @@ export async function generateMultiItemProformaAction(
   }
 
   // 1. Authenticate
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { success: false, error: "You must be signed in to generate a proforma." };
+  const auth = await authorize(["BUYER", "ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
   }
-
-  const dbUser = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
-  if (!dbUser) {
-    return { success: false, error: "User profile not found. Please complete registration." };
-  }
-
-  if (dbUser.role !== "BUYER" && dbUser.role !== "ADMIN") {
-    return { success: false, error: "Only buyers can generate proforma invoices." };
-  }
+  const dbUser = auth.user;
 
   try {
     const referenceCode = await db.$transaction(async (tx) => {
@@ -274,8 +247,7 @@ export async function generateMultiItemProformaAction(
         }
 
         const unitPrice = Number(matchingTier.unitPrice);
-        const itemSubtotal =
-          Math.round(Number((item.qty * unitPrice).toFixed(6)) * 100) / 100;
+        const itemSubtotal = roundCurrency(item.qty * unitPrice);
         totalBaseSubtotal += itemSubtotal;
 
         validatedItems.push({
@@ -287,18 +259,12 @@ export async function generateMultiItemProformaAction(
         });
       }
 
-      totalBaseSubtotal = Math.round(totalBaseSubtotal * 100) / 100;
-      const feePercent = getPlatformFeePercent();
-      const vatPercent = getVatRatePercent();
-      const platformFee =
-        Math.round(Number((totalBaseSubtotal * (feePercent / 100)).toFixed(6)) * 100) /
-        100;
-      const tax =
-        Math.round(
-          Number(((totalBaseSubtotal + platformFee) * (vatPercent / 100)).toFixed(6)) *
-            100
-        ) / 100;
-      const grandTotal = Number((totalBaseSubtotal + platformFee + tax).toFixed(2));
+      const { baseSubtotal, platformFee, tax, grandTotal } = applyFeesAndVat(
+        totalBaseSubtotal,
+        getPlatformFeePercent(),
+        getVatRatePercent()
+      );
+      totalBaseSubtotal = baseSubtotal;
 
       // Attempt order persistence with atomic retry on unique collision
       let attempts = 0;
@@ -387,18 +353,9 @@ export async function updateOrderStatusAction(
   // ---------------------------------------------------------------------------
   // 1. Authenticate and authorize (Admin only)
   // ---------------------------------------------------------------------------
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { success: false, error: "Authentication required." };
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
-  if (!dbUser || dbUser.role !== "ADMIN") {
-    return { success: false, error: "Only administrators can update order status." };
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
+    return { success: false, error: auth.error };
   }
 
   // ---------------------------------------------------------------------------
@@ -476,19 +433,11 @@ export async function cancelOrderInquiryAction(
   orderId: string
 ): Promise<ActionResult<{ orderId: string }>> {
   try {
-    const authUser = await getAuthenticatedUser();
-    if (!authUser) {
-      return { success: false, error: "Authentication required." };
+    const auth = await authorize(["BUYER", "ADMIN"]);
+    if (!auth.ok) {
+      return { success: false, error: auth.error };
     }
-
-    const dbUser = await db.user.findUnique({
-      where: { authId: authUser.id },
-      select: { id: true, role: true },
-    });
-
-    if (!dbUser) {
-      return { success: false, error: "User not found." };
-    }
+    const dbUser = auth.user;
 
     const order = await db.order.findUnique({
       where: { id: orderId },
@@ -596,16 +545,7 @@ export async function getOrderByReference(
   referenceCode: string
 ): Promise<OrderDetails | null> {
   // 1. Authenticate caller
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return null;
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
+  const dbUser = await getSessionUser();
   if (!dbUser) {
     return null;
   }

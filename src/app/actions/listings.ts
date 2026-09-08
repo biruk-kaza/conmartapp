@@ -10,7 +10,7 @@
 // =============================================================================
 
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { ProductUnit } from "@prisma/client";
 
@@ -34,19 +34,11 @@ export interface CreateListingInput {
 
 export async function createSellerListing(input: CreateListingInput) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "You must be logged in to create a listing." };
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
     }
-
-    // Lookup seller record in DB
-    const dbUser = await db.user.findUnique({
-      where: { authId: user.id },
-    });
-
-    if (!dbUser || (dbUser.role !== "SELLER" && dbUser.role !== "ADMIN")) {
-      return { error: "Only registered sellers can create material listings." };
-    }
+    const dbUser = auth.user;
 
     if (!input.title || input.title.trim().length < 3) {
       return { error: "Please enter a valid product title (at least 3 characters)." };
@@ -195,18 +187,11 @@ export async function createSellerListing(input: CreateListingInput) {
 
 export async function toggleListingStatus(listingId: string, active: boolean) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "Authentication required." };
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
     }
-
-    const dbUser = await db.user.findUnique({
-      where: { authId: user.id },
-    });
-
-    if (!dbUser) {
-      return { error: "User not found." };
-    }
+    const dbUser = auth.user;
 
     // Verify ownership
     const listing = await db.listing.findUnique({
@@ -262,18 +247,11 @@ export interface UpdateListingInput {
 
 export async function updateSellerListing(input: UpdateListingInput) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "Authentication required." };
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
     }
-
-    const dbUser = await db.user.findUnique({
-      where: { authId: user.id },
-    });
-
-    if (!dbUser) {
-      return { error: "User profile not found." };
-    }
+    const dbUser = auth.user;
 
     const listing = await db.listing.findUnique({
       where: { id: input.listingId },
@@ -382,18 +360,11 @@ export async function updateSellerListing(input: UpdateListingInput) {
 
 export async function deleteSellerListing(listingId: string) {
   try {
-    const user = await getAuthenticatedUser();
-    if (!user) {
-      return { error: "Authentication required." };
+    const auth = await authorize(["SELLER", "ADMIN"]);
+    if (!auth.ok) {
+      return { error: auth.error };
     }
-
-    const dbUser = await db.user.findUnique({
-      where: { authId: user.id },
-    });
-
-    if (!dbUser) {
-      return { error: "User profile not found." };
-    }
+    const dbUser = auth.user;
 
     const listing = await db.listing.findUnique({
       where: { id: listingId },

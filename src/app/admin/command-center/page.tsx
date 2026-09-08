@@ -9,7 +9,6 @@
 // 5. Category Introduction Fee & Status Switcher
 // =============================================================================
 
-import { redirect } from "next/navigation";
 import {
   Clock,
   CheckCircle,
@@ -21,8 +20,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { fetchAllOrders, fetchAdminStats } from "@/lib/data/admin";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
-import { db } from "@/lib/db";
+import { requireRole } from "@/lib/auth/session";
 import { getAdminPendingTopUpsAction } from "@/app/actions/wallet";
 import { getAdminCategoriesAction } from "@/app/actions/categories";
 import { getAdminDisputesAction } from "@/app/actions/enquiries";
@@ -35,19 +33,9 @@ import { SellerVerificationTable } from "./seller-verification-table";
 import { formatETB } from "@/lib/types";
 
 export default async function CommandCenterPage() {
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    redirect("/login?redirect=/admin/command-center");
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
-  if (!dbUser || dbUser.role !== "ADMIN") {
-    redirect("/unauthorized");
-  }
+  // The layout already guards this route; repeated here so the page is safe on
+  // its own. getSessionUser is memoized per request, so this costs no extra query.
+  await requireRole(["ADMIN"], "/admin/command-center");
 
   const [orders, stats, topUpsRes, categoriesRes, disputesRes, sellersRes] = await Promise.all([
     fetchAllOrders(),

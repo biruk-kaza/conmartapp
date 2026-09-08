@@ -30,8 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files — secrets never get committed, but the template must be
 .env*
+!.env.example
+
+# locally uploaded product images (development fallback only)
+/public/uploads
 
 # vercel
 .vercel

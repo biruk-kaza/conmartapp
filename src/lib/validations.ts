@@ -8,6 +8,43 @@
 import { z } from "zod";
 
 // =============================================================================
+// SHARED FIELD SCHEMAS
+// =============================================================================
+
+/**
+ * Roles a visitor may choose for themselves at sign-up.
+ *
+ * ADMIN and FIELD_AGENT are deliberately excluded: they are granted out of
+ * band by an existing administrator. Allowing them here would let anyone mint
+ * themselves a privileged account.
+ */
+export const SELF_REGISTERABLE_ROLES = ["BUYER", "SELLER"] as const;
+export type SelfRegisterableRole = (typeof SELF_REGISTERABLE_ROLES)[number];
+
+/** Ethiopian mobile number in international format, e.g. +251 91 234 5678. */
+export const ethiopianPhoneSchema = z
+  .string()
+  .min(1, "Phone number is required")
+  .regex(
+    /^\+251\s?\d{2}\s?\d{3}\s?\d{4}$/,
+    "Enter a valid Ethiopian phone number (e.g., +251 91 234 5678)"
+  );
+
+/** Positive whole-number quantity of a material unit. */
+export const quantitySchema = z
+  .number()
+  .int("Quantity must be a whole number")
+  .positive("Quantity must be greater than zero")
+  .max(1_000_000, "Quantity exceeds the maximum supported order size");
+
+/** Monetary amount in ETB, capped to two decimal places. */
+export const etbAmountSchema = z
+  .number()
+  .positive("Amount must be greater than zero")
+  .max(10_000_000, "Amount exceeds the maximum supported transaction size")
+  .multipleOf(0.01, "Amount can have at most 2 decimal places");
+
+// =============================================================================
 // AUTH SCHEMAS
 // =============================================================================
 
@@ -46,19 +83,13 @@ export const registerSchema = z.object({
     .string()
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be less than 100 characters"),
-  phone: z
-    .string()
-    .min(1, "Phone number is required")
-    .regex(
-      /^\+251\s?\d{2}\s?\d{3}\s?\d{4}$/,
-      "Enter a valid Ethiopian phone number (e.g., +251 91 234 5678)"
-    ),
+  phone: ethiopianPhoneSchema,
   companyName: z
     .string()
     .min(2, "Company name must be at least 2 characters")
     .max(200, "Company name must be less than 200 characters"),
-  role: z.enum(["BUYER", "SELLER", "ADMIN"], {
-    error: "Please select a role",
+  role: z.enum(SELF_REGISTERABLE_ROLES, {
+    error: "Please select whether you are buying or supplying",
   }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -124,3 +155,109 @@ export const updateOrderStatusSchema = z.object({
   ]),
 });
 export type UpdateOrderStatusData = z.infer<typeof updateOrderStatusSchema>;
+
+// =============================================================================
+// ENQUIRY SCHEMAS
+// =============================================================================
+
+/** Buyer purchase request submitted against a seller listing. */
+export const purchaseEnquirySchema = z.object({
+  listingId: z.string().min(1, "Listing is required"),
+  qty: quantitySchema,
+  deliveryPreference: z
+    .enum(["SELLER_DELIVERED", "SELF_COLLECT", "PLATFORM_ARRANGED"])
+    .default("SELLER_DELIVERED"),
+  deliveryAddress: z
+    .string()
+    .min(5, "Please provide a delivery or collection address")
+    .max(500, "Address must be less than 500 characters"),
+  accessConstraints: z
+    .string()
+    .max(1000, "Access notes must be less than 1000 characters")
+    .optional(),
+  requiredDate: z
+    .string()
+    .refine((value) => !Number.isNaN(Date.parse(value)), "Enter a valid date")
+    .optional(),
+  // Field-agent assisted capture, ignored for every other role.
+  onBehalfOfBuyerPhone: ethiopianPhoneSchema.optional(),
+  onBehalfOfBuyerName: z
+    .string()
+    .min(2, "Contractor name must be at least 2 characters")
+    .max(100, "Contractor name must be less than 100 characters")
+    .optional(),
+});
+export type PurchaseEnquiryData = z.infer<typeof purchaseEnquirySchema>;
+/** Caller-facing shape: fields with defaults are optional. */
+export type PurchaseEnquiryInput = z.input<typeof purchaseEnquirySchema>;
+
+// =============================================================================
+// WALLET SCHEMAS
+// =============================================================================
+
+/** Seller-submitted deposit awaiting administrative settlement. */
+export const topUpRequestSchema = z.object({
+  amount: etbAmountSchema.min(50, "Minimum deposit is ETB 50.00"),
+  paymentMethod: z.enum(["TELEBIRR", "CBE_BANK", "AWASH_BANK", "CASH_DEPOSIT"]),
+  referenceCode: z
+    .string()
+    .trim()
+    .min(4, "Enter the bank or Telebirr transaction reference")
+    .max(64, "Reference must be less than 64 characters"),
+  slipUrl: z.string().url("Deposit slip must be a valid URL").optional(),
+});
+export type TopUpRequestData = z.infer<typeof topUpRequestSchema>;
+
+// =============================================================================
+// DISPUTE SCHEMAS
+// =============================================================================
+
+/** Counterparty claim raised against an unlocked introduction. */
+export const raiseDisputeSchema = z.object({
+  enquiryId: z.string().min(1, "Enquiry is required"),
+  claimType: z.enum([
+    "SHORTAGE",
+    "DAMAGE",
+    "WRONG_SPECIFICATION",
+    "NON_DELIVERY",
+    "NON_PAYMENT",
+  ]),
+  description: z
+    .string()
+    .trim()
+    .min(20, "Describe the issue in at least 20 characters")
+    .max(2000, "Description must be less than 2000 characters"),
+  evidenceUrls: z
+    .array(z.string().url("Evidence must be a valid URL"))
+    .max(10, "At most 10 evidence files can be attached")
+    .default([]),
+});
+export type RaiseDisputeData = z.infer<typeof raiseDisputeSchema>;
+export type RaiseDisputeInput = z.input<typeof raiseDisputeSchema>;
+
+/** Administrative resolution of a dispute case. */
+export const resolveDisputeSchema = z.object({
+  disputeId: z.string().min(1, "Dispute is required"),
+  status: z.enum(["RESOLVED_SELLER_CREDIT", "RESOLVED_NO_REFUND", "CLOSED"]),
+  resolutionNotes: z
+    .string()
+    .trim()
+    .min(10, "Resolution notes must be at least 10 characters")
+    .max(2000, "Resolution notes must be less than 2000 characters"),
+  grantRefund: z.boolean(),
+});
+export type ResolveDisputeData = z.infer<typeof resolveDisputeSchema>;
+export type ResolveDisputeInput = z.input<typeof resolveDisputeSchema>;
+
+/** Seller's report of how an unlocked deal concluded. */
+export const dealOutcomeSchema = z.object({
+  enquiryId: z.string().min(1, "Enquiry is required"),
+  outcome: z.enum(["SUCCESS", "FAILURE"]),
+  reason: z
+    .string()
+    .trim()
+    .max(1000, "Reason must be less than 1000 characters")
+    .optional(),
+});
+export type DealOutcomeData = z.infer<typeof dealOutcomeSchema>;
+export type DealOutcomeInput = z.input<typeof dealOutcomeSchema>;

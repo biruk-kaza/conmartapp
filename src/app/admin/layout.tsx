@@ -2,13 +2,11 @@
 // ConMart — Admin Layout (Responsive & Localized)
 // =============================================================================
 
-import { redirect } from "next/navigation";
 import { HardHat, User } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { requireRole } from "@/lib/auth/session";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { LanguageToggle } from "@/components/language-toggle";
-import { db } from "@/lib/db";
 import {
   AdminSidebarNav,
   AdminBottomNav,
@@ -20,22 +18,8 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await getAuthenticatedUser();
-
-  if (!user) {
-    redirect("/login?redirect=/admin/command-center");
-  }
-
-  const dbUser = await db.user.findUnique({
-    where: { authId: user.id },
-    select: { role: true },
-  });
-
-  if (!dbUser || dbUser.role !== "ADMIN") {
-    redirect("/unauthorized");
-  }
-
-  const userName = (user.user_metadata?.name as string) ?? "Admin";
+  const user = await requireRole(["ADMIN"], "/admin/command-center");
+  const userName = user.name;
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row w-full max-w-full overflow-x-hidden">

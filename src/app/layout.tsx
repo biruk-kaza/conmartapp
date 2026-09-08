@@ -6,6 +6,7 @@
 // =============================================================================
 
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -42,7 +43,12 @@ export const metadata: Metadata = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // The nonce is minted per request by the proxy. Reading it opts the tree into
+  // dynamic rendering, which this app already requires for its authenticated
+  // routes; the alternative is a theme flash on every navigation.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html
       lang="en"
@@ -51,7 +57,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} dark h-full antialiased`}
     >
       <head>
+        {/* Applies the stored theme before first paint to avoid a flash of the
+            default dark palette for users who chose light mode. */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               try {

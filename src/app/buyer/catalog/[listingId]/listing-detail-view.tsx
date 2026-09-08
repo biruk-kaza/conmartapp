@@ -46,12 +46,16 @@ interface ListingDetailViewProps {
   listing: ListingDetail;
   depotListings: CatalogListing[];
   adminPhone: string;
+  platformFeePercent: number;
+  vatRatePercent: number;
 }
 
 export function ListingDetailView({
   listing,
   depotListings,
   adminPhone,
+  platformFeePercent,
+  vatRatePercent,
 }: ListingDetailViewProps) {
   const { t, locale } = useLanguage();
   const [isEnquiryOpen, setIsEnquiryOpen] = useState(false);
@@ -265,6 +269,8 @@ export function ListingDetailView({
                 maxQty: tier.maxQty,
                 unitPrice: tier.unitPrice,
               }))}
+              platformFeePercent={platformFeePercent}
+              vatRatePercent={vatRatePercent}
             />
 
             {/* Send Verified Purchase Enquiry Button */}

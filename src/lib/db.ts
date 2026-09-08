@@ -17,6 +17,9 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import pg from "pg";
+import type { ConnectionOptions } from "node:tls";
+
+import { env } from "@/lib/config/env";
 
 /**
  * Declare global variables to hold the Prisma Client and pg.Pool instances.
@@ -28,24 +31,51 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 /**
- * Create a new Prisma Client with the PrismaPg adapter and a singleton pg.Pool.
+ * TLS settings for the Postgres connection.
+ *
+ * Verification is on by default. Supabase and several other managed providers
+ * sign their certificates with a private CA, so the certificate has to be
+ * supplied through DATABASE_CA_CERT for verification to succeed against them.
+ *
+ * DATABASE_SSL_NO_VERIFY turns verification off entirely. It exists for local
+ * proxies with throwaway self-signed certificates. Enabling it in production
+ * lets anyone who can intercept the connection read every query — including
+ * the buyer and supplier contact details that sit behind the unlock paywall —
+ * so it is refused outside development.
  */
-function createPrismaClient(): PrismaClient {
-  const connectionString =
-    process.env.DATABASE_POOLER_URL ?? process.env.DATABASE_URL;
+function buildSslConfig(): ConnectionOptions {
+  if (env.DATABASE_SSL_NO_VERIFY === "true") {
+    if (env.NODE_ENV === "production") {
+      throw new Error(
+        "DATABASE_SSL_NO_VERIFY cannot be enabled in production. Supply the " +
+          "provider's CA certificate through DATABASE_CA_CERT instead."
+      );
+    }
 
-  if (!connectionString) {
-    throw new Error(
-      "DATABASE_URL environment variable is required. " +
-        "Set it in .env.local with your Supabase connection string."
+    console.warn(
+      "Database TLS certificate verification is disabled. Acceptable locally; " +
+        "set DATABASE_CA_CERT before deploying."
     );
+
+    return { rejectUnauthorized: false };
   }
+
+  return env.DATABASE_CA_CERT
+    ? { rejectUnauthorized: true, ca: env.DATABASE_CA_CERT }
+    : { rejectUnauthorized: true };
+}
+
+/** Creates the Prisma client with a singleton pg.Pool underneath. */
+function createPrismaClient(): PrismaClient {
+  // The transaction pooler is preferred at runtime; DATABASE_URL is the direct
+  // connection used by migrations and seeding.
+  const connectionString = env.DATABASE_POOLER_URL ?? env.DATABASE_URL;
 
   const pool =
     globalForPrisma.pgPool ??
     new pg.Pool({
       connectionString,
-      ssl: { rejectUnauthorized: false },
+      ssl: buildSslConfig(),
       max: 5,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
@@ -64,19 +94,38 @@ function createPrismaClient(): PrismaClient {
 
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["error", "warn"]
-        : ["error"],
+    log: env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
-/**
- * Singleton Prisma Client instance.
- * Reuses instance on globalThis across warm serverless container invocations.
- */
-export const db: PrismaClient =
-  globalForPrisma.prisma ?? createPrismaClient();
+function getClient(): PrismaClient {
+  globalForPrisma.prisma ??= createPrismaClient();
+  return globalForPrisma.prisma;
+}
 
-globalForPrisma.prisma = db;
+/**
+ * Singleton Prisma Client, created on first use and reused on `globalThis`
+ * across warm serverless invocations and development hot-reloads.
+ *
+ * Construction is deferred behind a proxy because importing this module must
+ * not open a connection. `next build` evaluates every route module to collect
+ * its configuration, so an eagerly-created pool made the build validate TLS
+ * settings and dial the database — which fails on a build machine that has no
+ * network path to it. Deferring also means a route that never queries anything
+ * does not hold a connection from the pool.
+ */
+export const db: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, property) {
+    const client = getClient();
+    const value = Reflect.get(client, property);
+
+    // Methods are bound to the real client: `this` inside Prisma's internals
+    // must be the client, not this proxy.
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+
+  has(_target, property) {
+    return property in getClient();
+  },
+});
 

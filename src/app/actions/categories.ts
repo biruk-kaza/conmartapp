@@ -5,31 +5,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getAuthenticatedUser } from "@/lib/supabase/server";
+import { authorize } from "@/lib/auth/session";
 import { db } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 
-async function verifyAdmin() {
-  const authUser = await getAuthenticatedUser();
-  if (!authUser) {
-    return { isAuthorized: false, error: "Unauthorized" };
-  }
-
-  const user = await db.user.findUnique({
-    where: { authId: authUser.id },
-    select: { id: true, role: true },
-  });
-
-  if (!user || user.role !== "ADMIN") {
-    return { isAuthorized: false, error: "Only administrators can manage categories." };
-  }
-
-  return { isAuthorized: true, user };
-}
-
 export async function getAdminCategoriesAction() {
-  const auth = await verifyAdmin();
-  if (!auth.isAuthorized) {
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
     return { success: false, error: auth.error };
   }
 
@@ -61,13 +43,16 @@ export async function updateCategoryFeeAction({
   categoryId: string;
   unlockFee: number;
 }) {
-  const auth = await verifyAdmin();
-  if (!auth.isAuthorized) {
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
     return { success: false, error: auth.error };
   }
 
-  if (unlockFee < 0) {
-    return { success: false, error: "Unlock fee cannot be negative." };
+  if (!Number.isFinite(unlockFee) || unlockFee < 0 || unlockFee > 100_000) {
+    return {
+      success: false,
+      error: "Unlock fee must be between ETB 0.00 and ETB 100,000.00.",
+    };
   }
 
   await db.category.update({
@@ -89,8 +74,8 @@ export async function toggleCategoryActiveAction({
   categoryId: string;
   isActive: boolean;
 }) {
-  const auth = await verifyAdmin();
-  if (!auth.isAuthorized) {
+  const auth = await authorize(["ADMIN"]);
+  if (!auth.ok) {
     return { success: false, error: auth.error };
   }
 

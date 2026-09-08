@@ -61,8 +61,15 @@ export function formatETBCompact(amount: number): string {
 // ENUM MIRRORS (safe for client-side imports)
 // =============================================================================
 
-/** User roles in the marketplace */
-export const USER_ROLES = ["BUYER", "SELLER", "ADMIN"] as const;
+/**
+ * Every role in the marketplace, mirroring the `user_role` enum in
+ * prisma/schema.prisma for client components, which cannot import
+ * @prisma/client.
+ *
+ * Not the set a visitor may pick at sign-up — that is
+ * SELF_REGISTERABLE_ROLES in @/lib/validations.
+ */
+export const USER_ROLES = ["BUYER", "SELLER", "ADMIN", "FIELD_AGENT"] as const;
 export type UserRole = (typeof USER_ROLES)[number];
 
 /** Standard construction material units (Ethiopian market) */
@@ -122,44 +129,9 @@ export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus | null> =
     CANCELLED: null,
   } as const;
 
-// =============================================================================
-// PLATFORM CONFIGURATION CONSTANTS
-// =============================================================================
-
-/**
- * Platform fee percentage — read from environment variable at runtime.
- * Defaults to 0% under the prepaid contact-unlock trading model
- * (revenue is generated strictly via seller wallet introduction unlock fees).
- */
-export function getPlatformFeePercent(): number {
-  const envValue = process.env.PLATFORM_FEE_PERCENT;
-  if (envValue === undefined || envValue === "") {
-    return 0;
-  }
-  const parsed = parseFloat(envValue);
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
-    return 0;
-  }
-  return parsed;
-}
-
-/**
- * VAT rate percentage — read from environment variable at runtime.
- * Falls back to 15% (Ethiopia's standard VAT rate).
- */
-export function getVatRatePercent(): number {
-  const envValue = process.env.VAT_RATE_PERCENT;
-  if (envValue === undefined || envValue === "") {
-    return 15;
-  }
-  const parsed = parseFloat(envValue);
-  if (Number.isNaN(parsed) || parsed < 0 || parsed > 100) {
-    throw new Error(
-      `Invalid VAT_RATE_PERCENT: "${envValue}". Must be a number between 0 and 100.`
-    );
-  }
-  return parsed;
-}
+// Platform fee and VAT rates come from `@/lib/config/env`. They are not
+// exported here because this module is imported by client components, where
+// non-public environment variables are undefined and would silently read as 0.
 
 // =============================================================================
 // PROFORMA CALCULATION TYPES

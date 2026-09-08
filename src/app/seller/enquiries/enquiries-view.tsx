@@ -109,7 +109,9 @@ export function SellerEnquiriesView({
 
     startTransition(async () => {
       const res = await sellerAcceptEnquiryAction(enquiry.id);
-      if (res.success && res.data) {
+      if (res.success) {
+        const { buyerContact, feeAmount } = res.data;
+
         setEnquiries((prev) =>
           prev.map((item) =>
             item.id === enquiry.id
@@ -118,13 +120,16 @@ export function SellerEnquiriesView({
                   status: "ACCEPTED",
                   isUnlocked: true,
                   buyerContact: {
-                    name: res.data?.buyerContact?.name || "Contractor",
-                    companyName: res.data?.buyerContact?.companyName || null,
-                    phone: res.data?.buyerContact?.phone || "",
-                    exactAddress: item.deliveryAddress,
+                    name: buyerContact.name,
+                    companyName: buyerContact.companyName,
+                    phone: buyerContact.phone,
+                    exactAddress: buyerContact.deliveryAddress,
                   },
                   unlockRecord: {
-                    feeAmount: Number(res.data?.unlockRecord?.feeAmount || item.unlockFee),
+                    // The fee actually charged, which can differ from the
+                    // listed unlockFee if an administrator changed the
+                    // category price between listing and acceptance.
+                    feeAmount,
                     unlockedAt: new Date().toISOString(),
                     refundStatus: "NONE",
                     sellerReportedOutcome: null,
@@ -136,7 +141,7 @@ export function SellerEnquiriesView({
         setActionEnquiry(null);
         setSuccessMsg(t("enquiry_unlocked_badge"));
       } else {
-        setErrorMsg(res.error || "Failed to unlock counterparty contact.");
+        setErrorMsg(res.error);
       }
     });
   };

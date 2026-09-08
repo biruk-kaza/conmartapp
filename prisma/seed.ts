@@ -32,9 +32,16 @@ import {
 } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
-const connectionString =
-  process.env.DATABASE_URL ??
-  "postgresql://postgres.nmvhhxnctzpsngvqcnbm:conmartyakob@aws-1-eu-west-1.pooler.supabase.com:5432/postgres";
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error(
+    "DATABASE_URL is not set. Copy .env.example to .env.local and point it at " +
+      "the database you want to seed.\n\n" +
+      "This script writes demo suppliers, listings, and wallet balances — never " +
+      "run it against production."
+  );
+}
 
 const adapter = new PrismaPg(connectionString);
 const prisma = new PrismaClient({ adapter });

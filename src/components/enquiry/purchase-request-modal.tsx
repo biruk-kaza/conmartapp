@@ -144,7 +144,7 @@ export function PurchaseRequestModal({
         requiredDate: requiredDate || undefined,
       });
 
-      if (res.success && res.data) {
+      if (res.success) {
         setSuccessCode(res.data.referenceCode);
         if (onSuccess) {
           onSuccess(res.data.enquiryId, res.data.referenceCode);
