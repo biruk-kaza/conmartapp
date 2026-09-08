@@ -16,9 +16,7 @@ export default function UnauthorizedPage() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            Access Denied
-          </h1>
+        <h1 className="heading-display text-3xl text-foreground">Access denied</h1>
           <p className="max-w-md text-muted-foreground">
             You don&apos;t have permission to access this page. This area is
             restricted to authorized personnel only.

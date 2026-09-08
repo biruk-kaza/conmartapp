@@ -1,11 +1,3 @@
-// =============================================================================
-// ConMart — Login Form (Client Component)
-// =============================================================================
-// Interactive login form with React Hook Form + Zod validation.
-// Calls the signIn server action and handles redirect on success.
-// Fully bilingual English & Amharic.
-// =============================================================================
-
 "use client";
 
 import { useState, useTransition } from "react";
@@ -13,28 +5,18 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { LogIn, Loader2, AlertCircle } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
+import { FormAlert } from "@/components/ui/form-alert";
 import { loginSchema, type LoginFormData } from "@/lib/validations";
 import { signIn } from "@/app/actions/auth";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 interface LoginFormProps {
-  /** URL to redirect to after successful login */
   redirectUrl?: string;
-  /** Error message from URL params (e.g., auth callback failure) */
   errorMessage?: string;
 }
 
@@ -52,10 +34,7 @@ export function LoginForm({ redirectUrl, errorMessage }: LoginFormProps) {
     formState: { errors },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
   function onSubmit(data: LoginFormData) {
@@ -73,7 +52,6 @@ export function LoginForm({ redirectUrl, errorMessage }: LoginFormProps) {
         return;
       }
 
-      // Sanitize redirectUrl to prevent Open Redirect attacks
       const isSafeRedirect =
         redirectUrl &&
         redirectUrl.startsWith("/") &&
@@ -87,92 +65,70 @@ export function LoginForm({ redirectUrl, errorMessage }: LoginFormProps) {
   }
 
   return (
-    <Card className="border-border/50 bg-card shadow-2xl">
-      <CardHeader className="space-y-1 pb-6">
-        <CardTitle className="text-xl font-bold">{t("auth_sign_in_title")}</CardTitle>
-        <CardDescription>
-          {t("auth_sign_in_subtitle")}
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-8">
+      <div className="space-y-1.5">
+        <h1 className="heading-display text-2xl text-foreground">
+          {t("auth_sign_in_title")}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t("auth_sign_in_subtitle")}</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {/* --- Server Error Alert --- */}
-          {serverError && (
-            <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{serverError}</span>
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <FormAlert>{serverError}</FormAlert>
 
-          {/* --- Email Field --- */}
-          <div className="space-y-2">
-            <Label htmlFor="login-email">{t("auth_email_label")}</Label>
-            <Input
-              id="login-email"
-              type="email"
-              placeholder={t("auth_email_placeholder")}
-              autoComplete="email"
-              disabled={isPending}
-              {...register("email")}
-              aria-invalid={!!errors.email}
-            />
-            {errors.email && (
-              <p className="text-xs text-destructive">{errors.email.message}</p>
-            )}
-          </div>
-
-          {/* --- Password Field --- */}
-          <div className="space-y-2">
-            <Label htmlFor="login-password">{t("auth_password_label")}</Label>
-            <Input
-              id="login-password"
-              type="password"
-              placeholder="••••••••"
-              autoComplete="current-password"
-              disabled={isPending}
-              {...register("password")}
-              aria-invalid={!!errors.password}
-            />
-            {errors.password && (
-              <p className="text-xs text-destructive">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-        </CardContent>
-
-        <CardFooter className="flex flex-col gap-4 pt-2">
-          <Button
-            type="submit"
-            className="w-full font-semibold"
+        <div className="space-y-2">
+          <Label htmlFor="login-email">{t("auth_email_label")}</Label>
+          <Input
+            id="login-email"
+            type="email"
+            placeholder={t("auth_email_placeholder")}
+            autoComplete="email"
             disabled={isPending}
-            size="lg"
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("auth_btn_signing_in")}
-              </>
-            ) : (
-              <>
-                <LogIn className="mr-2 h-4 w-4" />
-                {t("auth_btn_sign_in")}
-              </>
-            )}
-          </Button>
+            {...register("email")}
+            aria-invalid={!!errors.email}
+          />
+          {errors.email && (
+            <p className="text-xs text-destructive">{errors.email.message}</p>
+          )}
+        </div>
 
-          <p className="text-center text-sm text-muted-foreground">
-            {t("auth_no_account")}{" "}
-            <Link
-              href="/register"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              {t("auth_create_account_link")}
-            </Link>
-          </p>
-        </CardFooter>
+        <div className="space-y-2">
+          <Label htmlFor="login-password">{t("auth_password_label")}</Label>
+          <Input
+            id="login-password"
+            type="password"
+            placeholder="••••••••"
+            autoComplete="current-password"
+            disabled={isPending}
+            {...register("password")}
+            aria-invalid={!!errors.password}
+          />
+          {errors.password && (
+            <p className="text-xs text-destructive">{errors.password.message}</p>
+          )}
+        </div>
+
+        <Button
+          type="submit"
+          className="w-full font-semibold"
+          size="lg"
+          loading={isPending}
+          loadingLabel={t("auth_btn_signing_in")}
+        >
+          <LogIn />
+          {t("auth_btn_sign_in")}
+        </Button>
       </form>
-    </Card>
+
+      <p className="text-center text-sm text-muted-foreground">
+        {t("auth_no_account")}{" "}
+        <Link
+          href="/register"
+          className="font-medium text-primary underline-offset-4 hover:underline"
+        >
+          {t("auth_create_account_link")}
+        </Link>
+      </p>
+    </div>
   );
 }

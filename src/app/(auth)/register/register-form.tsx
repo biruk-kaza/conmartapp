@@ -14,19 +14,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { UserPlus, Loader2, AlertCircle, Building2, ShoppingCart } from "lucide-react";
+import { UserPlus, Building2, ShoppingCart } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { FormAlert } from "@/components/ui/form-alert";
 
 import { registerSchema, type RegisterFormData } from "@/lib/validations";
 import { signUp } from "@/app/actions/auth";
@@ -88,23 +81,16 @@ export function RegisterForm() {
   }
 
   return (
-    <Card className="border-border/50 bg-card shadow-2xl">
-      <CardHeader className="space-y-1 pb-6">
-        <CardTitle className="text-xl font-bold">{t("auth_register_title")}</CardTitle>
-        <CardDescription>
-          {t("auth_register_subtitle")}
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-8">
+      <div className="space-y-1.5">
+        <h1 className="heading-display text-2xl text-foreground">
+          {t("auth_register_title")}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t("auth_register_subtitle")}</p>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <CardContent className="space-y-4">
-          {/* --- Server Error Alert --- */}
-          {serverError && (
-            <div className="flex items-center gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              <AlertCircle className="h-4 w-4 shrink-0" />
-              <span>{serverError}</span>
-            </div>
-          )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+        <FormAlert>{serverError}</FormAlert>
 
           {/* --- Role Selection --- */}
           <div className="space-y-2">
@@ -114,10 +100,10 @@ export function RegisterForm() {
                 type="button"
                 onClick={() => setValue("role", "BUYER")}
                 aria-pressed={selectedRole === "BUYER"}
-                className={`flex flex-col items-center gap-1.5 rounded-md border-2 p-2.5 text-center text-xs font-semibold transition-all ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center text-xs font-semibold transition-all ${
                   selectedRole === "BUYER"
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background text-muted-foreground hover:border-muted-foreground/50"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
@@ -127,10 +113,10 @@ export function RegisterForm() {
                 type="button"
                 onClick={() => setValue("role", "SELLER")}
                 aria-pressed={selectedRole === "SELLER"}
-                className={`flex flex-col items-center gap-1.5 rounded-md border-2 p-2.5 text-center text-xs font-semibold transition-all ${
+                className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 text-center text-xs font-semibold transition-all ${
                   selectedRole === "SELLER"
                     ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-background text-muted-foreground hover:border-muted-foreground/50"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
                 }`}
               >
                 <Building2 className="h-5 w-5" />
@@ -248,39 +234,28 @@ export function RegisterForm() {
               </p>
             )}
           </div>
-        </CardContent>
 
-        <CardFooter className="flex flex-col gap-4 pt-2">
-          <Button
-            type="submit"
-            className="w-full font-semibold"
-            disabled={isPending}
-            size="lg"
+        <Button
+          type="submit"
+          className="w-full font-semibold"
+          size="lg"
+          loading={isPending}
+          loadingLabel={t("auth_btn_registering")}
+        >
+          <UserPlus />
+          {t("auth_btn_register")}
+        </Button>
+
+        <p className="text-center text-sm text-muted-foreground">
+          {t("auth_have_account")}{" "}
+          <Link
+            href="/login"
+            className="font-medium text-primary underline-offset-4 hover:underline"
           >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("auth_btn_registering")}
-              </>
-            ) : (
-              <>
-                <UserPlus className="mr-2 h-4 w-4" />
-                {t("auth_btn_register")}
-              </>
-            )}
-          </Button>
-
-          <p className="text-center text-sm text-muted-foreground">
-            {t("auth_have_account")}{" "}
-            <Link
-              href="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              {t("auth_sign_in_link")}
-            </Link>
-          </p>
-        </CardFooter>
+            {t("auth_sign_in_link")}
+          </Link>
+        </p>
       </form>
-    </Card>
+    </div>
   );
 }

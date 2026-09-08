@@ -11,7 +11,6 @@
 import React from "react";
 import Link from "next/link";
 import {
-  HardHat,
   ArrowRight,
   Building2,
   Truck,
@@ -29,9 +28,9 @@ import {
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { SiteHeader } from "@/components/marketing/site-header";
+import { SiteFooter } from "@/components/marketing/site-footer";
 import { cn } from "@/lib/utils";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { LanguageToggle } from "@/components/language-toggle";
 import { useLanguage } from "@/lib/i18n/language-context";
 
 export default function AboutPage() {
@@ -41,93 +40,33 @@ export default function AboutPage() {
   const pillars = [
     {
       icon: Building2,
-      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
+      color: "text-primary bg-primary/10 border-primary/20",
       title: t("about_pillar_1_title"),
       desc: t("about_pillar_1_desc"),
     },
     {
       icon: Lock,
-      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
+      color: "text-info bg-info/10 border-info/20",
       title: t("about_pillar_2_title"),
       desc: t("about_pillar_2_desc"),
     },
     {
       icon: RotateCcw,
-      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
+      color: "text-success bg-success/10 border-success/20",
       title: t("about_pillar_3_title"),
       desc: t("about_pillar_3_desc"),
     },
     {
       icon: Truck,
-      color: "text-purple-500 bg-purple-500/10 border-purple-500/20",
+      color: "text-info bg-info/10 border-info/20",
       title: t("about_pillar_4_title"),
       desc: t("about_pillar_4_desc"),
     },
   ];
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* --- Top Navigation Header --- */}
-      <header className="sticky top-0 z-50 border-b border-border/50 bg-card/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary shadow-xs">
-              <HardHat className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-lg font-bold leading-none tracking-tight">ConMart</span>
-              <span className="text-[10px] font-medium leading-none text-muted-foreground">Ethiopia</span>
-            </div>
-          </Link>
-
-          {/* Center Links */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <Link
-              href="/"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t("nav_home", "Home")}
-            </Link>
-            <Link
-              href="/buyer/category/all"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t("nav_all_materials", "Materials")}
-            </Link>
-            <Link
-              href="/buyer"
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {t("nav_categories", "Categories")}
-            </Link>
-            <Link
-              href="/about"
-              className="text-primary font-bold transition-colors"
-            >
-              {t("nav_about", "About Us")}
-            </Link>
-          </nav>
-
-          {/* Right Action Controls */}
-          <div className="flex items-center gap-2">
-            <LanguageToggle />
-            <ThemeToggle />
-            <Link
-              href="/login"
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "text-xs hidden sm:inline-flex")}
-            >
-              {t("nav_sign_in")}
-            </Link>
-            <Link
-              href="/register"
-              className={cn(buttonVariants({ size: "sm" }), "text-xs font-bold shadow-xs")}
-            >
-              {t("nav_get_started")}
-              <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </div>
-      </header>
+    <div className="flex min-h-dvh flex-col bg-background text-foreground">
+      <SiteHeader />
 
       {/* --- Main Content --- */}
       <main className="flex-1">
@@ -139,11 +78,9 @@ export default function AboutPage() {
               <span>{t("about_hero_badge")}</span>
             </div>
 
-            <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl text-foreground">
+            <h1 className="heading-display text-3xl text-foreground sm:text-5xl lg:text-6xl">
               {t("about_hero_title")}{" "}
-              <span className="bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 bg-clip-text text-transparent">
-                {t("about_hero_highlight")}
-              </span>
+              <span className="text-primary">{t("about_hero_highlight")}</span>
             </h1>
 
             <p className="mx-auto max-w-2xl text-base sm:text-lg text-muted-foreground leading-relaxed">
@@ -435,91 +372,7 @@ export default function AboutPage() {
         </section>
       </main>
 
-      {/* --- Upgraded Comprehensive Footer --- */}
-      <footer className="border-t border-border/60 bg-card/60 py-10 px-4 sm:px-6">
-        <div className="mx-auto max-w-6xl grid gap-8 sm:grid-cols-2 md:grid-cols-4 text-xs">
-          {/* Col 1: Brand Info */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-                <HardHat className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <span className="font-bold text-sm text-foreground">ConMart Ethiopia</span>
-            </div>
-            <p className="text-muted-foreground leading-relaxed">
-              {t("brand_tagline", "Ethiopia's premier B2B construction wholesale trading platform.")}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              &copy; {new Date().getFullYear()} ConMart Ethiopia. {t("footer_tagline")}
-            </p>
-          </div>
-
-          {/* Col 2: Marketplace Navigation */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">
-              {t("nav_categories", "Marketplace")}
-            </h4>
-            <ul className="space-y-1.5 text-muted-foreground">
-              <li>
-                <Link href="/buyer/category/all" className="hover:text-foreground transition-colors">
-                  {t("nav_all_materials", "All Materials")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/buyer" className="hover:text-foreground transition-colors">
-                  {t("nav_categories", "Browse Categories")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-foreground transition-colors font-medium text-foreground">
-                  {t("nav_about", "About ConMart")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Suppliers & Trust */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">
-              {locale === "am" ? "አቅራቢዎችና ዋስትና" : "Suppliers & Trust"}
-            </h4>
-            <ul className="space-y-1.5 text-muted-foreground">
-              <li>
-                <Link href="/register" className="hover:text-foreground transition-colors">
-                  {t("about_cta_seller_btn", "Register as Supplier")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="hover:text-foreground transition-colors">
-                  {t("about_pillar_3_title", "80% Refund Guarantee")}
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-foreground transition-colors">
-                  {t("nav_seller_portal", "Supplier Portal")}
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Support Hotline */}
-          <div className="space-y-2.5">
-            <h4 className="font-bold text-foreground text-xs uppercase tracking-wider">
-              {t("nav_support", "Support & Office")}
-            </h4>
-            <div className="space-y-1 text-muted-foreground">
-              <p className="flex items-center gap-1.5 text-foreground font-semibold">
-                <Phone className="h-3.5 w-3.5 text-primary" />
-                <span>{adminPhone}</span>
-              </p>
-              <p className="flex items-center gap-1.5 pt-1">
-                <MapPin className="h-3.5 w-3.5 text-amber-500 shrink-0" />
-                <span>Addis Ababa, Bole Sub-City</span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

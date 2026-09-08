@@ -30,6 +30,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { formatETB } from "@/lib/types";
 import { ListingStatusButton } from "./listing-status-button";
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/layout/page-header";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/lib/i18n/language-context";
 import {
@@ -67,50 +69,36 @@ export function SellerDashboardView({ listings }: SellerDashboardViewProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
-            {t("seller_inventory_title")}
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-            {t("seller_inventory_subtitle")}
-          </p>
-        </div>
-
-        <Link
-          href="/seller/listings/new"
-          className={cn(
-            buttonVariants({ variant: "default", size: "sm" }),
-            "h-9 gap-2 text-xs font-bold px-4 shadow-sm self-start sm:self-auto"
-          )}
-        >
-          <PlusCircle className="h-4 w-4" />
-          {t("seller_btn_add")}
-        </Link>
-      </div>
-
-      {listings.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-card/40 py-16 px-4 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
-            <Package className="h-7 w-7" />
-          </div>
-          <h3 className="text-base font-semibold text-foreground">
-            {t("seller_empty_title")}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-sm">
-            {t("seller_empty_desc")}
-          </p>
+      <PageHeader
+        title={t("seller_inventory_title")}
+        description={t("seller_inventory_subtitle")}
+        actions={
           <Link
             href="/seller/listings/new"
-            className={cn(
-              buttonVariants({ variant: "default", size: "sm" }),
-              "mt-5 h-9 gap-2 text-xs font-bold shadow"
-            )}
+            className={cn(buttonVariants({ size: "default" }), "font-semibold")}
           >
-            <PlusCircle className="h-4 w-4" />
-            {t("seller_btn_list_first")}
+            <PlusCircle className="size-4" />
+            {t("seller_btn_add")}
           </Link>
-        </div>
+        }
+      />
+
+      {listings.length === 0 ? (
+        <EmptyState
+          icon={Package}
+          title={t("seller_empty_title")}
+          description={t("seller_empty_desc")}
+          action={
+            <Link
+              href="/seller/listings/new"
+              className={cn(buttonVariants(), "font-semibold")}
+            >
+              <PlusCircle className="size-4" />
+              {t("seller_btn_list_first")}
+            </Link>
+          }
+          className="rounded-2xl border border-dashed border-border bg-card/40"
+        />
       ) : (
         <div className="space-y-6">
           {listings.map((listing) => {

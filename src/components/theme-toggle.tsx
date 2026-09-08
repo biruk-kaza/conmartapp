@@ -27,7 +27,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       {isLight ? (
         <Moon className="h-4 w-4 text-foreground transition-transform duration-200 hover:rotate-12" />
       ) : (
-        <Sun className="h-4 w-4 text-amber-400 transition-transform duration-200 hover:rotate-45" />
+        <Sun className="h-4 w-4 text-primary transition-transform duration-200 hover:rotate-45" />
       )}
     </Button>
   );

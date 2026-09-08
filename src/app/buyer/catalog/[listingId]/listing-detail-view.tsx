@@ -109,13 +109,13 @@ export function ListingDetailView({
               <Badge variant="secondary" className="backdrop-blur-md bg-background/90 text-xs font-semibold">
                 {localizedCategoryName}
               </Badge>
-              <Badge className="bg-emerald-600/90 text-white backdrop-blur-md text-xs font-medium gap-1">
+              <Badge className="bg-success/90 text-success-foreground backdrop-blur-md text-xs font-medium gap-1">
                 <CheckCircle2 className="h-3 w-3" /> {t("detail_in_stock")}
               </Badge>
             </div>
 
             <div className="absolute bottom-4 left-4 right-4">
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white drop-shadow-md">
+              <h1 className="heading-display text-2xl text-white drop-shadow-md sm:text-3xl">
                 {listing.product.title}
               </h1>
               <div className="mt-2 flex flex-wrap items-center gap-4 text-xs text-white/90 drop-shadow">
@@ -124,7 +124,7 @@ export function ListingDetailView({
                   {t("detail_partner_depot")}
                 </span>
                 <span className="flex items-center gap-1">
-                  <MapPin className="h-3.5 w-3.5 text-amber-400" />
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
                   {localizedLocation}
                 </span>
               </div>

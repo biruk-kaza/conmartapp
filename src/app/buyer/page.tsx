@@ -1,11 +1,3 @@
-// =============================================================================
-// ConMart — Buyer Category Showcase Hub (Stage 1)
-// =============================================================================
-// The primary portal when a contractor or developer logs in.
-// Large, immersive material category cards, quick search, recent purchase requests,
-// and ConMart Verified Counterparty Introduction guarantee.
-// =============================================================================
-
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
@@ -14,7 +6,6 @@ import {
   ArrowRight,
   ShieldCheck,
   Building2,
-  CheckCircle2,
   Container,
   Columns3,
   Mountain,
@@ -24,13 +15,12 @@ import {
   TreePine,
   Zap,
   Coins,
-  Unlock,
-  Clock,
-  ShieldAlert,
   SendHorizontal,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/layout/page-header";
 import { getAuthenticatedUser } from "@/lib/supabase/server";
 import {
   fetchCategoriesWithCounts,
@@ -56,7 +46,8 @@ export default async function BuyerCategoryHubPage() {
   }
 
   const buyerName = (user.user_metadata?.name as string) ?? "Contractor";
-  const companyName = (user.user_metadata?.companyName as string) ?? "General Contractor";
+  const companyName =
+    (user.user_metadata?.companyName as string) ?? "your company";
 
   const [categories, recentEnquiries] = await Promise.all([
     fetchCategoriesWithCounts(),
@@ -66,261 +57,187 @@ export default async function BuyerCategoryHubPage() {
   const totalOffers = categories.reduce((sum, c) => sum + c.listingCount, 0);
 
   return (
-    <div className="space-y-8 sm:space-y-10 w-full max-w-full overflow-hidden">
-      {/* ===================================================================== */}
-      {/* 1. HERO HEADER & PROCUREMENT SEARCH                                 */}
-      {/* ===================================================================== */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-gradient-to-br from-card via-card/90 to-primary/5 p-4 sm:p-8 shadow-sm w-full max-w-full">
-        <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-0.5 text-[11px] sm:text-xs font-semibold text-primary">
-            <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-            <span>ConMart Direct Introduction Service · Addis Ababa</span>
-          </div>
-
-          <h1 className="text-xl sm:text-4xl font-extrabold tracking-tight text-foreground leading-tight">
-            Direct wholesale materials with zero broker markup.
-          </h1>
-
-          <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            Welcome back, <span className="font-semibold text-foreground">{companyName}</span> ({buyerName}).
-            Compare competing wholesale offers from verified factories and depots across Addis Ababa, submit purchase requests with your exact site access feasibility, and connect directly to close your material deals.
+    <div className="space-y-10">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-8">
+        <div className="pointer-events-none absolute inset-0 cm-glow opacity-70" />
+        <div className="relative max-w-2xl space-y-4">
+          <p className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-0.5 text-xs font-medium text-primary">
+            <ShieldCheck className="size-3.5" />
+            Direct introduction · Addis Ababa
           </p>
-
-          {/* Search Form to /buyer/category/all */}
+          <PageHeader
+            className="border-0 pb-0"
+            title={`Welcome back, ${buyerName.split(" ")[0]}`}
+            description={`${companyName} — compare depot-direct wholesale offers, then send a purchase request. Contacts stay masked until the supplier unlocks.`}
+          />
           <form
             action="/buyer/category/all"
             method="GET"
-            className="pt-2 sm:pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-xl w-full"
+            className="flex flex-col gap-2 sm:flex-row sm:items-center"
           >
             <div className="relative flex-1">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <input
-                type="text"
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
                 name="search"
-                placeholder="Search Dangote, Mugher, Zuquala Rebar, River Sand, HCB..."
-                className="w-full h-10 sm:h-11 rounded-xl border border-border bg-background pl-10 pr-4 text-xs font-medium text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 shadow-sm"
+                placeholder="Dangote, Zuquala rebar, river sand…"
+                className="h-11 rounded-xl bg-background pl-10"
               />
             </div>
             <button
               type="submit"
               className={cn(
-                buttonVariants({ variant: "default" }),
-                "h-10 sm:h-11 px-5 rounded-xl text-xs font-bold shadow gap-2"
+                buttonVariants({ size: "lg" }),
+                "h-11 rounded-xl font-semibold"
               )}
             >
-              <span>Browse Materials</span>
-              <ArrowRight className="h-3.5 w-3.5" />
+              Browse
+              <ArrowRight className="size-4" />
             </button>
           </form>
-
-          {/* Quick Search Chips */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap pt-1 text-[11px] text-muted-foreground">
-            <span className="font-medium">Popular:</span>
-            <Link
-              href="/buyer/category/cement?brand=Dangote"
-              className="rounded-md border border-border bg-muted/40 px-2 py-0.5 hover:border-primary/50 hover:text-foreground transition-colors"
-            >
-              Dangote Cement
-            </Link>
-            <Link
-              href="/buyer/category/rebar-structural-steel?brand=Zuquala"
-              className="rounded-md border border-border bg-muted/40 px-2 py-0.5 hover:border-primary/50 hover:text-foreground transition-colors"
-            >
-              Zuquala Rebar Ø16mm
-            </Link>
-            <Link
-              href="/buyer/category/sand-gravel-aggregates"
-              className="rounded-md border border-border bg-muted/40 px-2 py-0.5 hover:border-primary/50 hover:text-foreground transition-colors"
-            >
-              Mojo River Sand
-            </Link>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <QuickChip href="/buyer/category/cement?brand=Dangote">Dangote</QuickChip>
+            <QuickChip href="/buyer/category/rebar-structural-steel">Rebar Ø16</QuickChip>
+            <QuickChip href="/buyer/category/sand-gravel-aggregates">River sand</QuickChip>
           </div>
         </div>
       </div>
 
-      {/* ===================================================================== */}
-      {/* 2. BROWSE BY CATEGORY                                                 */}
-      {/* ===================================================================== */}
-      <div className="space-y-4 w-full max-w-full overflow-hidden">
-        <div className="flex items-center justify-between">
+      <section className="space-y-4">
+        <div className="flex items-end justify-between gap-3">
           <div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
-              Official Material Categories
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Curated construction materials directly available from verified Addis Ababa suppliers ({totalOffers} depot offers).
+            <h2 className="text-lg font-semibold tracking-tight">Categories</h2>
+            <p className="text-sm text-muted-foreground">
+              {totalOffers} live depot offers from verified yards.
             </p>
           </div>
           <Link
             href="/buyer/category/all"
-            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1 shrink-0"
+            className="text-sm font-medium text-primary hover:underline"
           >
-            <span>View All Materials</span>
-            <ArrowRight className="h-3.5 w-3.5" />
+            View all
           </Link>
         </div>
 
-        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-6 gap-2 sm:gap-3.5 w-full max-w-full">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {categories.map((cat) => {
             const IconComponent = ICON_MAP[cat.iconName] || Package;
-
             return (
               <Link
                 key={cat.id}
                 href={`/buyer/category/${cat.slug}`}
-                className="group relative overflow-hidden rounded-xl border border-border bg-card p-1.5 sm:p-3.5 hover:border-primary/60 hover:shadow-md transition-all duration-300 flex flex-col items-center text-center justify-between min-h-[100px] sm:min-h-[130px] w-full min-w-0"
+                className="group flex min-h-[7.5rem] flex-col justify-between rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50 hover:bg-elevated"
               >
-                <div className="flex flex-col items-center space-y-1 sm:space-y-2 w-full min-w-0">
-                  <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-2xs shrink-0">
-                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </div>
-
-                  <h3 className="font-bold text-[9.5px] sm:text-xs text-foreground group-hover:text-primary transition-colors line-clamp-2 leading-tight break-words px-0.5 w-full">
+                <span className="flex size-9 items-center justify-center rounded-lg bg-primary/12 text-primary transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  <IconComponent className="size-4" />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground">
                     {cat.name}
                   </h3>
-                </div>
-
-                <div className="mt-1 w-full">
-                  <span className="inline-block rounded-full bg-muted/60 px-1.5 py-0.2 text-[9px] sm:text-[10px] font-mono text-muted-foreground group-hover:text-foreground">
+                  <p className="mt-0.5 text-xs text-muted-foreground">
                     {cat.listingCount} {cat.listingCount === 1 ? "depot" : "depots"}
-                  </span>
+                  </p>
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
+      </section>
 
-      {/* ===================================================================== */}
-      {/* 3. RECENT PURCHASE ENQUIRIES TRACKER                                  */}
-      {/* ===================================================================== */}
       {recentEnquiries.length > 0 && (
-        <div className="space-y-3 rounded-2xl border border-border/60 bg-card p-5 sm:p-6 shadow-sm">
-          <div className="flex items-center justify-between border-b border-border/40 pb-3">
-            <div className="flex items-center gap-2">
-              <SendHorizontal className="h-4 w-4 text-primary" />
-              <h3 className="font-bold text-sm text-foreground">
-                Your Recent Purchase Enquiries
-              </h3>
-            </div>
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+              <SendHorizontal className="size-4 text-primary" />
+              Recent enquiries
+            </h2>
             <Link
               href="/buyer/enquiries"
-              className="text-xs font-semibold text-primary hover:underline"
+              className="text-sm font-medium text-primary hover:underline"
             >
-              View All Enquiries ({recentEnquiries.length}) →
+              View all
             </Link>
           </div>
-
           <div className="grid gap-3 sm:grid-cols-3">
-            {recentEnquiries.map((enq) => {
-              const isUnlocked = enq.isUnlocked;
-              const isPending = enq.status === "PENDING";
-              const isCompleted = enq.status === "COMPLETED";
-              const isDisputed = enq.status === "DISPUTED";
-
-              return (
-                <Link
-                  key={enq.id}
-                  href="/buyer/enquiries"
-                  className="group flex flex-col justify-between rounded-xl border border-border/60 bg-muted/20 p-3.5 hover:border-primary/50 hover:bg-muted/40 transition-all"
-                >
-                  <div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="font-mono font-bold text-foreground">
-                        {enq.referenceCode}
-                      </span>
-                      {isPending && (
-                        <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 text-[10px] font-semibold gap-1">
-                          <Clock className="h-3 w-3" /> Waiting
-                        </Badge>
-                      )}
-                      {isUnlocked && !isCompleted && !isDisputed && (
-                        <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 text-[10px] font-semibold gap-1">
-                          <Unlock className="h-3 w-3" /> Unlocked
-                        </Badge>
-                      )}
-                      {isCompleted && (
-                        <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 text-[10px] font-semibold gap-1">
-                          <CheckCircle2 className="h-3 w-3" /> Done
-                        </Badge>
-                      )}
-                      {isDisputed && (
-                        <Badge className="bg-rose-500/10 text-rose-600 border-rose-500/20 text-[10px] font-semibold gap-1">
-                          <ShieldAlert className="h-3 w-3" /> Dispute
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-1.5 text-xs font-bold text-foreground line-clamp-1">
-                      {enq.productTitle}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      {enq.qty.toLocaleString()} {enq.unit} · {enq.categoryName}
-                    </p>
-                  </div>
-
-                  <div className="mt-3 pt-2 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="text-[10px]">
-                      {new Date(enq.createdAt).toLocaleDateString()}
-                    </span>
-                    <span className="text-[11px] font-semibold text-primary group-hover:underline">
-                      View Tracker →
-                    </span>
-                  </div>
-                </Link>
-              );
-            })}
+            {recentEnquiries.map((enq) => (
+              <Link
+                key={enq.id}
+                href="/buyer/enquiries"
+                className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-mono text-xs font-semibold">
+                    {enq.referenceCode}
+                  </span>
+                  <StatusBadge domain="enquiry" status={enq.status} size="sm" />
+                </div>
+                <p className="mt-2 line-clamp-1 text-sm font-medium">
+                  {enq.productTitle}
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {enq.qty.toLocaleString()} {enq.unit} · {enq.categoryName}
+                </p>
+              </Link>
+            ))}
           </div>
-        </div>
+        </section>
       )}
 
-      {/* ===================================================================== */}
-      {/* 4. CONMART COUNTERPARTY INTRODUCTION GUARANTEE                         */}
-      {/* ===================================================================== */}
-      <div className="rounded-2xl border border-border/60 bg-gradient-to-r from-card to-muted/20 p-6">
-        <div className="text-center max-w-xl mx-auto mb-6">
-          <Badge variant="secondary" className="mb-2 text-[11px] font-semibold">
-            How ConMart Connects the Market
-          </Badge>
-          <h3 className="text-lg font-bold text-foreground">
-            The ConMart Counterparty Introduction Guarantee
-          </h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            We provide verified access to real suppliers with physical stock in Addis Ababa. No hidden middleman markups.
-          </p>
+      <section className="rounded-2xl border border-border bg-card p-6">
+        <h2 className="text-center text-lg font-semibold">How introductions work</h2>
+        <p className="mx-auto mt-1 max-w-lg text-center text-sm text-muted-foreground">
+          You never pay to see a listing. The supplier pays to see you.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <Guarantee
+            icon={Building2}
+            title="Verified depots"
+            body="Trade licenses and mill certificates before a listing is published."
+          />
+          <Guarantee
+            icon={Coins}
+            title="Prepaid unlock"
+            body="The supplier pays the category fee from their wallet to open your request."
+          />
+          <Guarantee
+            icon={ShieldCheck}
+            title="80% credit if it fails"
+            body="If the deal does not close, most of the fee returns as non-withdrawable credit."
+          />
         </div>
+      </section>
+    </div>
+  );
+}
 
-        <div className="grid gap-4 sm:grid-cols-3 text-xs">
-          <div className="rounded-xl border border-border/40 bg-background/60 p-4 space-y-1.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary mb-2">
-              <Building2 className="h-4 w-4" />
-            </div>
-            <h4 className="font-bold text-foreground">1. Verified Depots & Mill Certs</h4>
-            <p className="text-muted-foreground leading-relaxed">
-              Every seller submits trade licenses and factory test certificates. Operations audits physical yard stock.
-            </p>
-          </div>
+function QuickChip({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="rounded-full border border-border bg-background px-2.5 py-1 text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+    >
+      {children}
+    </Link>
+  );
+}
 
-          <div className="rounded-xl border border-border/40 bg-background/60 p-4 space-y-1.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 mb-2">
-              <Coins className="h-4 w-4" />
-            </div>
-            <h4 className="font-bold text-foreground">2. Prepaid Supplier Commitment</h4>
-            <p className="text-muted-foreground leading-relaxed">
-              Suppliers pay an introduction fee from their prepaid wallet to unlock your request — ensuring genuine, committed sellers.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-border/40 bg-background/60 p-4 space-y-1.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-500/10 text-indigo-600 mb-2">
-              <ShieldCheck className="h-4 w-4" />
-            </div>
-            <h4 className="font-bold text-foreground">3. Fair Dispute Protection</h4>
-            <p className="text-muted-foreground leading-relaxed">
-              If a deal fails or specifications do not match, 80% fee credit is returned to the seller and ConMart mediates claims.
-            </p>
-          </div>
-        </div>
-      </div>
+function Guarantee({
+  icon: Icon,
+  title,
+  body,
+}: {
+  icon: typeof Building2;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border/70 bg-background/50 p-4">
+      <span className="mb-3 flex size-8 items-center justify-center rounded-lg bg-primary/12 text-primary">
+        <Icon className="size-4" />
+      </span>
+      <h3 className="text-sm font-semibold">{title}</h3>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{body}</p>
     </div>
   );
 }

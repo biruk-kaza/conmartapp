@@ -5,7 +5,7 @@
 // and SEO metadata for the B2B Construction Marketplace.
 // =============================================================================
 
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -22,6 +22,7 @@ const geistMono = Geist_Mono({
 
 import { ThemeProvider } from "@/components/theme-provider";
 import { LanguageProvider } from "@/lib/i18n/language-context";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: {
@@ -41,6 +42,16 @@ export const metadata: Metadata = {
     "volume pricing",
     "proforma invoice",
   ],
+};
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#1a1c22" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f8" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -78,8 +89,19 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         />
       </head>
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        {/* Lets a keyboard user reach the page content without tabbing through
+            the whole sidebar on every navigation. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-200 focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-primary-foreground"
+        >
+          Skip to content
+        </a>
+
         <ThemeProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <LanguageProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

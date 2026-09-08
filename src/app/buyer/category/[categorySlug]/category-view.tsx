@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/ui/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { formatETB } from "@/lib/types";
@@ -150,7 +151,7 @@ export function CategoryView({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
+            <h1 className="heading-display text-2xl text-foreground sm:text-3xl">
               {activeCategoryTitle}
             </h1>
             <Badge variant="outline" className="text-xs font-semibold">
@@ -186,30 +187,26 @@ export function CategoryView({
 
       {/* 5. LISTINGS GRID */}
       {listings.length === 0 ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-border/80 bg-card/40 py-16 px-4 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground mb-4">
-            <Package className="h-7 w-7" />
-          </div>
-          <h3 className="text-base font-semibold text-foreground">
-            {t("catalog_empty_title")}
-          </h3>
-          <p className="mt-1 text-xs text-muted-foreground max-w-sm">
-            {searchQuery || brandFilter || locationFilter
+        <EmptyState
+          icon={Package}
+          title={t("catalog_empty_title")}
+          description={
+            searchQuery || brandFilter || locationFilter
               ? t("catalog_empty_desc")
               : locale === "am"
-              ? "የተረጋገጡ አቅራቢዎች አዳዲስ የግንባታ ዕቃዎችን ሲመዘግቡ እዚህ ይታያሉ።"
-              : "Listings will appear here when verified suppliers update inventory."}
-          </p>
-          <Link
-            href={`/buyer/category/${categorySlug}`}
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "mt-5 text-xs font-semibold"
-            )}
-          >
-            {t("catalog_btn_clear_filters")}
-          </Link>
-        </div>
+                ? "የተረጋገጡ አቅራቢዎች አዳዲስ የግንባታ ዕቃዎችን ሲመዘግቡ እዚህ ይታያሉ።"
+                : "Listings appear here when verified suppliers update inventory."
+          }
+          action={
+            <Link
+              href={`/buyer/category/${categorySlug}`}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+            >
+              {t("catalog_btn_clear_filters")}
+            </Link>
+          }
+          className="rounded-2xl border border-dashed border-border bg-card/40"
+        />
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {listings.map((listing) => (
@@ -240,7 +237,7 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
     "https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&w=800&q=80";
 
   return (
-    <Card className="group flex flex-col overflow-hidden border-border/70 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-xl">
+    <Card className="group flex flex-col overflow-hidden border-border bg-card transition-colors hover:border-primary/40">
       {/* Image Banner with Category badge & tier tags */}
       <div className="relative aspect-[16/9] w-full overflow-hidden bg-muted">
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -264,7 +261,7 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
         {/* Volume Tiers Indicator overlay */}
         <div className="absolute bottom-2.5 left-3">
           <span className="inline-flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-xs px-2 py-0.5 text-[11px] font-medium text-white">
-            <Tag className="h-3 w-3 text-amber-400" />
+            <Tag className="h-3 w-3 text-primary" />
             {listing.tierCount}{" "}
             {listing.tierCount !== 1
               ? t("catalog_volume_tiers")
@@ -286,7 +283,7 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
             {listing.seller.companyName}
           </span>
           <span className="inline-block h-1 w-1 rounded-full bg-border" />
-          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+          <span className="text-2xs font-medium text-success">
             {t("catalog_verified")}
           </span>
         </div>
@@ -305,14 +302,14 @@ function ListingCard({ listing }: { listing: CatalogListing }) {
                 <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
                   {t("catalog_wholesale_from")}
                 </span>
-                <p className="text-lg font-extrabold text-foreground leading-tight font-mono">
+                <p className="tabular text-lg font-semibold text-foreground leading-tight">
                   {formatETB(listing.lowestPrice, locale)}
                   <span className="ml-1 text-xs font-normal text-muted-foreground font-sans">
                     / {unitLabel}
                   </span>
                 </p>
                 <div className="mt-1">
-                  <span className="inline-flex items-center rounded-xs border border-amber-500/30 bg-amber-500/5 px-1.5 py-0.2 text-[9px] font-semibold text-amber-600 dark:text-amber-400">
+                  <span className="inline-flex items-center rounded-md border border-primary/25 bg-primary/8 px-1.5 py-0.5 text-2xs font-medium text-primary">
                     {locale === "am" ? "ገላጭ ዋጋ · በሻጭ የሚረጋገጥ" : "Indicative · Subject to Confirmation"}
                   </span>
                 </div>

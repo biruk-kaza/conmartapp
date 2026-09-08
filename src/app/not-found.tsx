@@ -1,48 +1,33 @@
-// =============================================================================
-// ConMart — Branded 404 Not Found Page
-// =============================================================================
-
 import Link from "next/link";
-import { HardHat, Home, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Home, Package } from "lucide-react";
+
+import { Logo } from "@/components/brand/logo";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function NotFound() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary mb-6 shadow-sm">
-        <HardHat className="h-8 w-8" />
-      </div>
-
-      <p className="text-sm font-bold uppercase tracking-wider text-primary">
-        404 — Material or Page Not Found
+    <div className="flex min-h-dvh flex-col items-center justify-center px-4 text-center">
+      <Logo href="/" />
+      <p className="mt-10 text-xs font-medium tracking-wider text-primary uppercase">
+        404
       </p>
-      <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl">
-        We couldn&apos;t locate that record.
+      <h1 className="heading-display mt-2 text-3xl text-foreground sm:text-4xl">
+        That page is not on the yard.
       </h1>
       <p className="mt-3 max-w-md text-sm text-muted-foreground">
-        The construction material listing, order, or page you are looking for may have been archived, fulfilled, or the URL might be invalid.
+        The listing, proforma, or page you asked for may have been archived or
+        the link is wrong.
       </p>
-
       <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-        <Link href="/buyer/catalog">
-          <Button className="gap-2 font-semibold">
-            <Package className="h-4 w-4" />
-            Browse Catalog
-          </Button>
+        <Link href="/buyer" className={cn(buttonVariants(), "font-semibold")}>
+          <Package className="size-4" />
+          Browse materials
         </Link>
-        <Link href="/">
-          <Button variant="outline" className="gap-2">
-            <Home className="h-4 w-4" />
-            Home
-          </Button>
+        <Link href="/" className={cn(buttonVariants({ variant: "outline" }))}>
+          <Home className="size-4" />
+          Home
         </Link>
-      </div>
-
-      <div className="mt-12 text-xs text-muted-foreground">
-        Need assistance with a procurement order? Call ConMart Desk:{" "}
-        <span className="font-semibold text-foreground">
-          {process.env.NEXT_PUBLIC_ADMIN_PHONE ?? "+251 91 100 0000"}
-        </span>
       </div>
     </div>
   );
