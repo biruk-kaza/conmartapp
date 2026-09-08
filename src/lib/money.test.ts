@@ -31,4 +31,10 @@ describe("roundCurrency", () => {
     expect(() => roundCurrency(Number.NaN)).toThrow(RangeError);
     expect(() => roundCurrency(Number.POSITIVE_INFINITY)).toThrow(RangeError);
   });
+
+  it("handles magnitudes that stringify in exponential form", () => {
+    // Exercises the `scaleToCents` fallback for values like 1e22 whose text
+    // contains `e` and cannot take a second exponent in the decimal shift.
+    expect(roundCurrency(1e22)).toBe(1e22);
+  });
 });

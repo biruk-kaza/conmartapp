@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   generateReferenceCode,
+  generateUniqueReferenceCode,
   isValidReferenceCode,
   normalizeReferenceCode,
 } from "@/lib/engine/reference-code";
@@ -33,6 +34,14 @@ describe("generateReferenceCode", () => {
     // essentially never repeat. The threshold rather than an exact count keeps
     // the test from failing on a legitimate one-in-a-million collision.
     expect(codes.size / sampleSize).toBeGreaterThan(0.999);
+  });
+});
+
+describe("generateUniqueReferenceCode", () => {
+  it("returns a PRF code for legacy async call sites", async () => {
+    await expect(generateUniqueReferenceCode()).resolves.toMatch(
+      /^PRF-[2-9A-HJ-NP-Z]{6}$/
+    );
   });
 });
 
